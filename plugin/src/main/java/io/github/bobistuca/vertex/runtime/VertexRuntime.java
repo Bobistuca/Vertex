@@ -197,7 +197,7 @@ public final class VertexRuntime {
 
     private void snapshotTick() {
         long now = System.nanoTime();
-        tickMonitor.tick(now);
+        tickMonitor.tick(now, 2); // the snapshot task runs every second tick
         for (Player p : Bukkit.getOnlinePlayers()) {
             try {
                 tracker.refresh(p, now);

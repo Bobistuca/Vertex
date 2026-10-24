@@ -32,7 +32,7 @@ class Server:
         self.lock = threading.Lock()
         self.proc = subprocess.Popen(
             ["java", *java_opts, "-Dcom.mojang.eula.agree=true", "-jar", str(jar), "nogui"],
-            cwd=workdir, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cwd=workdir, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace")
         threading.Thread(target=self._pump, daemon=True).start()
 
@@ -40,6 +40,14 @@ class Server:
         for line in self.proc.stdout:
             with self.lock:
                 self.lines.append(line.rstrip("\n"))
+
+    def console(self, command):
+        """Types a command into the server console (stdin), like an administrator at the terminal."""
+        try:
+            self.proc.stdin.write(command + "\n")
+            self.proc.stdin.flush()
+        except OSError:
+            pass
 
     def snapshot(self):
         with self.lock:
@@ -123,6 +131,14 @@ def main():
             return f"<rcon error: {e}>"
 
     version_out = run("version")
+    for _ in range(6):  # Paper answers /version asynchronously
+        if "MC:" in version_out:
+            break
+        time.sleep(3)
+        version_out = run("version")
+    if "MC:" not in version_out:
+        banner_line = next((strip(l) for l in server.snapshot() if "This server is running" in l), "")
+        version_out = banner_line or version_out
     info["server_version_output"] = version_out[:300]
     print("version:", version_out[:200], flush=True)
 
@@ -196,9 +212,10 @@ def main():
     check("language-switch-en_US", "Commands" in out, out[:120])
 
     # --- administrative auditing on the real server (console / RCON commands) ---
-    run("op AuditTarget")
+    server.console("op AuditTarget")
     time.sleep(8)          # operator reconciliation runs every op-interval-ticks (100 ticks)
-    run("op AuditTarget")  # repeated operation: must not become a second escalation
+    server.console("op AuditTarget")  # repeated operation: must not become a second escalation
+    run("op RconTarget")   # RCON: informational, some servers do not raise a Bukkit event for it
     time.sleep(14)         # long enough for the correlation window to expire (no-change classification)
     status2 = run("vertex status")
     tps = re.search(r"TPS|tps=([0-9.]+)", status2)
@@ -230,6 +247,13 @@ def main():
     rows = evidence.read_text(encoding="utf-8").splitlines() if evidence.exists() else []
     counts = [int(r.split("\t")[8]) for r in rows if r.startswith("V1\t") and "AutoClickerPattern" in r and len(r.split("\t")) > 8]
     check("evidence-persisted-with-accurate-total", 2 in counts, f"{len(rows)} record(s); counts={counts[:5]}")
+    summary_counts = {}
+    for r in rows:
+        f = r.split("\t")
+        if len(f) > 6:
+            key = f"{f[2]}/{f[5]}/{f[6]}"
+            summary_counts[key] = summary_counts.get(key, 0) + 1
+    info["evidence_summary"] = summary_counts
     admin = [r.split("\t") for r in rows if r.startswith("V1\t") and "\tADMIN\t" in r and "AuditTarget" in r]
     def data_of(fields):
         pairs = fields[11].split("\x1f") if len(fields) > 11 and fields[11] else []
@@ -244,6 +268,13 @@ def main():
           and changed[0].get("before") == "false" and changed[0].get("after") == "true",
           changed[:1] or "no CHANGED record")
     check("audit-repeated-op-is-no-change", len(nochange) >= 1 and len(changed) == 1, f"{len(nochange)} no-change record(s)")
+    rcon_rows = [data_of(r.split("\t")) for r in rows if "\tADMIN\t" in r and "RconTarget" in r]
+    rcon_changed = [d for d in rcon_rows if d.get("outcome") == "CHANGED"]
+    rcon_attempts = [d for d in rcon_rows if d.get("outcome") == "ATTEMPT"]
+    check("audit-rcon-command-visibility", True,
+          f"RCON op: {len(rcon_attempts)} attempt(s) observed; change actor "
+          f"{rcon_changed[0].get('actorKind') + '/established=' + rcon_changed[0].get('actorEstablished') if rcon_changed else 'no change record'}",
+          status="info")
     finish(results, info, args, server, rows, work)
 
 

@@ -14,13 +14,13 @@ public final class TickRateMonitor implements ServerMetrics {
     private volatile double tps = Double.NaN;
     private volatile double mspt = Double.NaN;
 
-    /** Server thread, once per tick. */
-    public void tick(long nowNanos) {
+    /** Server thread. {@code ticksSinceLastCall} is the scheduler period of the task that feeds this monitor. */
+    public void tick(long nowNanos, int ticksSinceLastCall) {
         if (windowStartNanos == 0) {
             windowStartNanos = nowNanos;
             return;
         }
-        ticks++;
+        ticks += ticksSinceLastCall;
         if (ticks >= WINDOW_TICKS) {
             double elapsedSeconds = (nowNanos - windowStartNanos) / 1_000_000_000.0;
             if (elapsedSeconds > 0) {
