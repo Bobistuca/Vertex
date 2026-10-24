@@ -16,10 +16,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ClientInfoCollector {
     private static final int MAX_PENDING = 2048;
+    /** Data that arrives before the join event (configuration phase) is kept at most this long. */
+    private static final long EARLY_NANOS = 30_000_000_000L;
 
     private static final class Pending {
-        final String name;
-        final long startedNanos;
+        String name;
+        long startedNanos;
+        final long createdNanos;
+        boolean joined;
         String brand;
         Provenance brandProvenance = Provenance.UNKNOWN;
         int protocol = -1;
@@ -28,9 +32,10 @@ public final class ClientInfoCollector {
         Provenance versionProvenance = Provenance.UNKNOWN;
         final Set<String> channels = new LinkedHashSet<>();
 
-        Pending(String name, long startedNanos) {
+        Pending(String name, long nowNanos) {
             this.name = name;
-            this.startedNanos = startedNanos;
+            this.startedNanos = nowNanos;
+            this.createdNanos = nowNanos;
         }
 
         boolean complete() {
@@ -47,13 +52,51 @@ public final class ClientInfoCollector {
         this.maxChannels = maxChannels;
     }
 
+    /** Marks the join; the timeout counts from here. Data received earlier is kept. */
     public void begin(UUID id, String name, long nowNanos) {
-        if (pending.size() < MAX_PENDING) {
-            pending.putIfAbsent(id, new Pending(Sanitizer.clean(name, 32), nowNanos));
+        Pending p = pending.get(id);
+        if (p == null && pending.size() < MAX_PENDING) {
+            p = new Pending(Sanitizer.clean(name, 32), nowNanos);
+            Pending existing = pending.putIfAbsent(id, p);
+            if (existing != null) {
+                p = existing;
+            }
+        }
+        if (p != null) {
+            synchronized (p) {
+                p.name = Sanitizer.clean(name, 32);
+                p.startedNanos = nowNanos;
+                p.joined = true;
+            }
         }
     }
 
-    public void brandPayload(UUID id, byte[] payload) {
+    /** Early (pre-join) data: creates the pending entry on first sight. */
+    private Pending early(UUID id, long nowNanos) {
+        Pending p = pending.get(id);
+        if (p == null && pending.size() < MAX_PENDING) {
+            p = new Pending("", nowNanos);
+            Pending existing = pending.putIfAbsent(id, p);
+            if (existing != null) {
+                p = existing;
+            }
+        }
+        return p;
+    }
+
+    /** Players that joined but still lack a brand (candidates for a server-API brand lookup). */
+    public List<UUID> awaitingBrand() {
+        List<UUID> ids = new ArrayList<>();
+        for (Map.Entry<UUID, Pending> e : pending.entrySet()) {
+            if (e.getValue().joined && e.getValue().brand == null) {
+                ids.add(e.getKey());
+            }
+        }
+        return ids;
+    }
+
+    public void brandPayload(UUID id, byte[] payload, long nowNanos) {
+        early(id, nowNanos);
         brandText(id, BrandParser.parse(payload), Provenance.REPORTED);
     }
 
@@ -100,8 +143,14 @@ public final class ClientInfoCollector {
         while (it.hasNext()) {
             Map.Entry<UUID, Pending> entry = it.next();
             Pending p = entry.getValue();
-            boolean timedOut = nowNanos - p.startedNanos >= timeoutNanos;
             synchronized (p) {
+                if (!p.joined) {
+                    if (nowNanos - p.createdNanos >= EARLY_NANOS) {
+                        it.remove();
+                    }
+                    continue;
+                }
+                boolean timedOut = nowNanos - p.startedNanos >= timeoutNanos;
                 if (p.complete() || timedOut) {
                     it.remove();
                     ready.add(new ClientReport(entry.getKey(), p.name,

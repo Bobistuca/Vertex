@@ -2,9 +2,9 @@ plugins {
     `java-library`
 }
 
-val adventureVersion: String by project
-val snakeYamlVersion: String by project
-val junitVersion: String by project
+val adventureVersion = providers.gradleProperty("adventureVersion").get()
+val snakeYamlVersion = providers.gradleProperty("snakeYamlVersion").get()
+val junitVersion = providers.gradleProperty("junitVersion").get()
 
 dependencies {
     // Used only to parse configurable MiniMessage templates into a neutral rich-text model.

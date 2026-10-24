@@ -1,0 +1,49 @@
+name: Vertex
+main: io.github.bobistuca.vertex.VertexPlugin
+version: ${version}
+api-version: '26.1'
+description: A Minecraft anti-cheat for Bukkit, Spigot, and Paper featuring packet analysis, aggregated staff alerts, and administrative auditing, without automatic punishments.
+author: Bobistuca
+website: https://github.com/Bobistuca/Vertex
+softdepend: [LuckPerms]
+
+commands:
+  vertex:
+    description: Vertex anti-cheat commands
+    aliases: [vx]
+    usage: /<command> [help|alerts|inspect|history|status|reload]
+
+permissions:
+  vertex.alerts:
+    description: Receive private Vertex alerts
+    default: op
+  vertex.command.alerts:
+    description: Toggle your personal alerts
+    default: op
+  vertex.command.inspect:
+    description: Inspect a player's detection state
+    default: op
+  vertex.command.history:
+    description: View recent evidence history
+    default: op
+  vertex.command.status:
+    description: View health, checks and platform capabilities
+    default: op
+  vertex.command.reload:
+    description: Reload the configuration safely
+    default: op
+  vertex.command.*:
+    description: All Vertex command permissions
+    default: op
+    children:
+      vertex.command.alerts: true
+      vertex.command.inspect: true
+      vertex.command.history: true
+      vertex.command.status: true
+      vertex.command.reload: true
+  vertex.*:
+    description: Everything Vertex offers
+    default: op
+    children:
+      vertex.alerts: true
+      vertex.command.*: true

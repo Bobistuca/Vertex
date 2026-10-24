@@ -65,6 +65,19 @@ public final class AnalysisEngine {
         }
     }
 
+    /**
+     * Records a finding produced outside the packet pipeline (for example the reach check, which needs
+     * server-side entity state). Thread safe; the incident counters feed the inspect command.
+     */
+    public void record(UUID id, String name, Finding finding, String dedupKey) {
+        PlayerState state = stateFor(id);
+        long now = wallClock.getAsLong();
+        state.incidents.computeIfAbsent(finding.checkId(), k -> new AtomicLong()).incrementAndGet();
+        state.lastIncidentWallMillis = now;
+        sink.accept(new Detection(id, name, finding.checkId(), finding.kind(), finding.confidence(),
+                finding.reason(), finding.measurements(), now, dedupKey));
+    }
+
     public Optional<PlayerReport> report(UUID id) {
         PlayerState state = states.get(id);
         if (state == null) {

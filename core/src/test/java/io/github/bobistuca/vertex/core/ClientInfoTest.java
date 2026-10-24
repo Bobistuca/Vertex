@@ -1,6 +1,7 @@
 package io.github.bobistuca.vertex.core;
 
 import static io.github.bobistuca.vertex.core.support.TestSupport.ALICE;
+import static io.github.bobistuca.vertex.core.support.TestSupport.BOB;
 import static io.github.bobistuca.vertex.core.support.TestSupport.MS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,7 +42,7 @@ class ClientInfoTest {
         ClientInfoCollector c = new ClientInfoCollector(3000, 16);
         c.begin(ALICE, "Alice", 0);
         assertTrue(c.poll(100 * MS).isEmpty());
-        c.brandPayload(ALICE, brandPayload("fabric"));
+        c.brandPayload(ALICE, brandPayload("fabric"), 0);
         c.protocol(ALICE, 775, "26.1");
         c.channel(ALICE, "minecraft:brand");
         List<ClientReport> ready = c.poll(200 * MS);
@@ -54,6 +55,22 @@ class ClientInfoTest {
         assertEquals(Provenance.INFERRED, r.versionProvenance());
         assertFalse(r.timedOut());
         assertEquals("not-verifiable", ClientReport.INJECTION_STATUS);
+    }
+
+    @Test
+    void configurationPhaseDataThatArrivesBeforeTheJoinEventIsKept() {
+        ClientInfoCollector c = new ClientInfoCollector(3000, 16);
+        c.brandPayload(ALICE, brandPayload("lunar"), 0);
+        assertTrue(c.poll(100 * MS).isEmpty(), "not released before the player joined");
+        c.begin(ALICE, "Alice", 500 * MS);
+        c.protocol(ALICE, 775, "26.1");
+        ClientReport r = c.poll(600 * MS).getFirst();
+        assertEquals("lunar", r.brand());
+        assertEquals("Alice", r.playerName());
+        // A connection that never joins is dropped silently.
+        c.brandPayload(BOB, brandPayload("x"), 0);
+        assertTrue(c.poll(40_000 * MS).isEmpty());
+        assertEquals(0, c.pendingCount());
     }
 
     @Test
@@ -85,7 +102,7 @@ class ClientInfoTest {
         String evil = "<red><bold>[Vertex]</bold></red>\n§4HACKER§r <click:run_command:'/op me'>x</click>";
         ClientInfoCollector c = new ClientInfoCollector(10, 16);
         c.begin(ALICE, "Ali<gold>ce", 0);
-        c.brandPayload(ALICE, brandPayload(evil));
+        c.brandPayload(ALICE, brandPayload(evil), 0);
         c.protocol(ALICE, 775, "26.1");
         ClientReport report = c.poll(1 * MS).getFirst();
 
@@ -112,7 +129,7 @@ class ClientInfoTest {
     void injectionIsNeverClaimedOrDenied() {
         ClientInfoCollector c = new ClientInfoCollector(10, 16);
         c.begin(ALICE, "Alice", 0);
-        c.brandPayload(ALICE, brandPayload("vanilla"));
+        c.brandPayload(ALICE, brandPayload("vanilla"), 0);
         c.protocol(ALICE, 775, "26.1");
         ClientReport r = c.poll(1 * MS).getFirst();
         for (String locale : new String[] {"en_US", "pt_BR"}) {
