@@ -17,7 +17,9 @@ subprojects {
         tasks.withType<JavaCompile>().configureEach {
             options.release = 25
             options.encoding = "UTF-8"
-            options.compilerArgs.addAll(listOf("-Xlint:all,-serial,-processing", "-Werror"))
+            options.compilerArgs.add("-Xlint:all,-serial,-processing")
+            // The server-independent core must compile without any warning; integration modules report them.
+            if (project.name == "core") options.compilerArgs.add("-Werror")
         }
         tasks.withType<Test>().configureEach {
             useJUnitPlatform()

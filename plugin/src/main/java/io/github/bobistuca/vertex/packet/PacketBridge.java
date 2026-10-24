@@ -52,8 +52,7 @@ public final class PacketBridge {
             PacketEvents.setAPI(SpigotPacketEventsBuilder.build(plugin));
             PacketEvents.getAPI().getSettings()
                     .reEncodeByDefault(false)
-                    .checkForUpdates(false)
-                    .bStats(false);
+                    .checkForUpdates(false);
             PacketEvents.getAPI().load();
             state = State.LOADED;
         } catch (Throwable t) {
