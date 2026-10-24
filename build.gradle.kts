@@ -5,7 +5,9 @@ subprojects {
     version = providers.environmentVariable("VERTEX_BUILD_ID").orElse("development").get()
 
     repositories {
-        mavenCentral()
+        // CI uses Maven Central. VERTEX_MAVEN_MIRROR lets a restricted environment point at a Central mirror.
+        val mirror = providers.environmentVariable("VERTEX_MAVEN_MIRROR").orNull
+        if (mirror != null) maven(mirror) else mavenCentral()
     }
 
     plugins.withType<JavaPlugin> {

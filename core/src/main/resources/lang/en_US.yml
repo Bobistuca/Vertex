@@ -1,0 +1,154 @@
+# Vertex - English (US) messages.
+# Values use MiniMessage. Palette tags: <primary> (light green), <secondary> (dark green), <text> (white).
+# Player-controlled values are always inserted as escaped text and are never parsed.
+prefix: "<primary><bold>[Vertex]</bold></primary>"
+
+level:
+  low: "low"
+  medium: "medium"
+  high: "high"
+  established: "protocol"
+
+kind:
+  suspicion: "Suspicion"
+  established: "Established contradiction"
+  admin: "Administrative change"
+
+alert:
+  line: "{prefix} <text><player></text> <secondary>•</secondary> <primary><check></primary> <secondary>•</secondary> <text><count>x</text> <secondary>•</secondary> <primary><symbol> <label></primary><secondary>:</secondary> <text><level></text>"
+  actionbar: "<primary><bold>Vertex</bold></primary> <secondary>•</secondary> <text><player> · <check> · <count>x</text>"
+  hover:
+    title: "<primary><bold><check></bold></primary> <secondary>(<kind>)</secondary>"
+    reason: "<primary>Reason:</primary> <text><reason></text>"
+    measurement: "<secondary>▸</secondary> <text><name></text><secondary>:</secondary> <text><value></text>"
+    context: "<primary>Context:</primary> <text>latency <ping> · TPS <tps> · mode <mode></text>"
+    window: "<primary>Window:</primary> <text><count> incident(s) in <seconds> s</text>"
+    footer: "<secondary>Confidence reflects how many signals agreed; it is not a probability.</secondary>"
+  suppressed: "{prefix} <text><count> additional alert(s) were limited by the rate cap.</text>"
+
+reason:
+  AutoClickerPattern: "A completed window of attacks showed regularity across several independent signals. The server only sees packets, not physical clicks; this is a statistical suspicion."
+  PacketRateAnomaly: "Movement packets exceeded the expected rate for several consecutive seconds without a preceding stall. Lag and proxies can also cause this."
+  PacketFlood: "The total inbound packet rate stayed far above normal behavior for consecutive seconds."
+  MovementSpeed: "Horizontal displacement per packet repeatedly exceeded the limit derived from server-known attributes."
+  MovementAscent: "Upward movement exceeded what a jump, step or server-known effect allows."
+  MovementHover: "Stationary in mid-air with nothing below and no server-known effect that explains it."
+  ReachDistance: "Repeated attacks from beyond the server-known interaction range plus latency tolerance."
+  InvalidNumericValue: "A packet carried a coordinate or rotation that an unmodified client does not send."
+  InvalidPacketField: "A packet field was outside the valid protocol range."
+  SelfAttack: "The client attacked its own entity, which an unmodified client does not do."
+  ImpossibleFlightToggle: "The client reported flying while the server has not granted flight."
+  InventoryWindowMismatch: "The client clicked a container that the server does not have open for it."
+
+admin:
+  line: "{prefix} <primary><symbol> <label></primary> <secondary>•</secondary> <text><subject></text> <secondary>•</secondary> <primary><aspect></primary> <secondary>•</secondary> <text><before> → <after></text> <secondary>•</secondary> <primary>Source</primary><secondary>:</secondary> <text><actor></text>"
+  nochange: "{prefix} <primary><symbol> <label></primary> <secondary>•</secondary> <primary><aspect></primary> <secondary>•</secondary> <text><subject></text> <secondary>•</secondary> <text>attempt had no effect (the state was already that)</text> <secondary>•</secondary> <primary>Source</primary><secondary>:</secondary> <text><actor></text>"
+  hover:
+    title: "<primary><bold><aspect></bold></primary> <secondary>(<outcome>)</secondary>"
+    source: "<primary>Source:</primary> <text><actor> <established></text>"
+    command: "<primary>Command:</primary> <text><command></text>"
+    note: "<secondary>An unknown source means attribution could not be established, not that the affected player is responsible.</secondary>"
+  actor:
+    console: "console"
+    unknown: "unknown"
+    established: "(established)"
+    notestablished: "(not established)"
+  outcome:
+    attempt: "command attempt"
+    changed: "confirmed change"
+    nochange: "no change"
+  label:
+    attention: "Administrative attention"
+    info: "Administrative change"
+    nochange: "Repeated operation"
+  aspect:
+    Admin.Op: "OP status"
+    Admin.GameMode: "Game mode"
+    Admin.PermissionGroup: "Permission group"
+    Admin.PermissionNode: "Permission"
+    Admin.ScoreboardTag: "Scoreboard tag"
+    Admin.Team: "Team/prefix"
+
+client:
+  header: "{prefix} <primary><symbol> Client information</primary> <secondary>•</secondary> <text><player></text> <secondary>(<uuid>)</secondary>"
+  brand: "<secondary>▸</secondary> <primary>Brand:</primary> <text><brand></text> <secondary>[<provenance>]</secondary>"
+  protocol: "<secondary>▸</secondary> <primary>Protocol:</primary> <text><protocol></text> <secondary>[<provenance>]</secondary>"
+  version: "<secondary>▸</secondary> <primary>Version:</primary> <text><version></text> <secondary>[<provenance>]</secondary>"
+  channels: "<secondary>▸</secondary> <primary>Channels:</primary> <text><channels></text> <secondary>[<provenance>]</secondary>"
+  injection: "<secondary>▸</secondary> <primary>Injection:</primary> <text>not verifiable from server-side data</text>"
+  timeout: "<secondary>Some information did not arrive in time and is listed as unknown.</secondary>"
+  note: "<secondary>Client data is untrusted. A modified client or a \"vanilla\" brand proves nothing by itself.</secondary>"
+  none: "unknown"
+
+provenance:
+  reported: "reported"
+  inferred: "inferred"
+  unknown: "unknown"
+
+command:
+  no-permission: "{prefix} <text>You do not have permission to use this command.</text>"
+  unknown-sub: "{prefix} <text>Unknown subcommand: <sub>. Use /vertex help.</text>"
+  player-not-found: "{prefix} <text>Player not found: <name></text>"
+  player-only: "{prefix} <text>This command can only be used by a player.</text>"
+  usage: "{prefix} <text>Usage: <usage></text>"
+  help:
+    header: "{prefix} <primary>Commands</primary>"
+    alerts: "<secondary>▸</secondary> <primary>/vertex alerts</primary> <text>- toggle your personal alerts</text>"
+    inspect: "<secondary>▸</secondary> <primary>/vertex inspect [player]</primary> <text>- detection and client state</text>"
+    history: "<secondary>▸</secondary> <primary>/vertex history [player] [n]</primary> <text>- recent evidence</text>"
+    status: "<secondary>▸</secondary> <primary>/vertex status</primary> <text>- health, checks and capabilities</text>"
+    reload: "<secondary>▸</secondary> <primary>/vertex reload</primary> <text>- safely reload the configuration</text>"
+  alerts:
+    enabled: "{prefix} <text>Your personal alerts are now</text> <primary>enabled</primary><text>.</text>"
+    disabled: "{prefix} <text>Your personal alerts are now</text> <primary>disabled</primary><text>.</text>"
+    not-eligible: "{prefix} <text>You are not an eligible recipient; the preference was saved, but no alerts will be received.</text>"
+  line: "<secondary>▸</secondary> <primary><label></primary><secondary>:</secondary> <text><value></text>"
+  inspect:
+    header: "{prefix} <primary>Inspection</primary> <secondary>•</secondary> <text><player></text> <secondary>(<uuid>)</secondary>"
+    none: "<secondary>No detection state for this player yet.</secondary>"
+  history:
+    header: "{prefix} <primary>History</primary> <secondary>•</secondary> <text><scope> (<count>)</text>"
+    entry: "<secondary>▸</secondary> <text><time></text> <secondary>•</secondary> <text><player></text> <secondary>•</secondary> <primary><check></primary> <secondary>•</secondary> <text><count>x · <kind></text>"
+    empty: "<secondary>No evidence recorded.</secondary>"
+  status:
+    header: "{prefix} <primary>Vertex status</primary>"
+    check-active: "<secondary>▸</secondary> <primary>active</primary> <text><check></text>"
+    check-inactive: "<secondary>▸</secondary> <secondary>inactive</secondary> <text><check> - <reason></text>"
+  reload:
+    ok: "{prefix} <text>Configuration reloaded successfully.</text>"
+    failed: "{prefix} <text>Reload refused; the last working configuration remains active.</text>"
+    problem: "<secondary>▸</secondary> <text><problem></text>"
+
+label:
+  online: "Online"
+  gamemode: "Game mode"
+  ping: "Latency"
+  tps: "TPS"
+  incidents: "Incidents"
+  last: "Last incident"
+  windows: "Click windows"
+  client: "Client"
+  platform: "Platform"
+  minecraft: "Minecraft"
+  java: "Java"
+  messaging: "Messaging"
+  packets: "Packet observation"
+  metrics: "Server metrics"
+  storage: "Storage"
+  audit: "Audit"
+  recipients: "Recipients"
+  language: "Language"
+  dependency: "Dependency"
+  health: "Health"
+  capabilities: "Capabilities"
+  never: "never"
+  unknown: "unknown"
+
+startup:
+  banner: "Vertex is running: observation, evidence and private alerts. No automatic punishments."
+  platform: "Detected platform: <platform> (Minecraft <minecraft>, Java <java>)."
+  packets: "Packet observation: <state>."
+  messaging: "Rich messaging: <state>."
+  metrics: "TPS/MSPT: <state>."
+  limited: "Capability unavailable: <what>. Dependent checks stay inactive."
+  shutdown: "Vertex stopped."

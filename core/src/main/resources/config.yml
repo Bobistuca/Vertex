@@ -1,0 +1,135 @@
+# Vertex configuration. Vertex only observes, records evidence and notifies authorized staff privately.
+# It never bans, kicks, mutes, freezes, teleports, cancels events or blocks packets.
+# Invalid values are rejected on reload and the last working configuration stays active.
+
+# Message language file in plugins/Vertex/lang/ (pt_BR or en_US). Add your own <locale>.yml to extend.
+language: pt_BR
+
+appearance:
+  primary: "#86EFAC"    # Vertex name and highlights (light green)
+  secondary: "#166534"  # separators and supporting accents (dark green)
+  text: "#FFFFFF"       # player names, measurements, explanations (white)
+  symbols:              # labels never rely on color alone
+    info: "ℹ"
+    suspicion: "⚠"
+    established: "✖"
+    admin: "⚙"
+
+alerts:
+  aggregation-window-ms: 2000   # incidents of the same player and check inside one window become one "Nx" alert
+  log-to-console: true          # private console line for each alert
+  rate-limit:
+    max-per-player-per-minute: 30      # chat alerts per player and minute (evidence is still recorded); 0 = unlimited
+    max-per-recipient-per-minute: 60   # chat alerts one staff member receives per minute; 0 = unlimited
+  action-bar:
+    enabled: false              # live "Nx" counter in the action bar while a window is open (needs messaging support)
+  sound:
+    enabled: false
+    name: "block.note_block.pling"
+    volume: 0.6
+    pitch: 1.4
+  recipients:
+    operators: true             # server operators, regardless of game mode
+    permission: true            # players with vertex.alerts
+    game-modes: [CREATIVE]      # game modes that may receive alerts (add SPECTATOR if wanted); never grants commands
+
+client-info:
+  enabled: true
+  timeout-ms: 3000              # send the report after this long even if some values are missing
+  max-channels: 16
+
+# Bounded grace periods after legitimate server-side events. Checks that depend on movement or timing pause.
+grace:
+  join-ms: 5000
+  teleport-ms: 2000
+  respawn-ms: 3000
+  world-change-ms: 3000
+  velocity-ms: 1500             # knockback, explosions, plugin velocity
+  damage-ms: 1000
+  game-mode-ms: 2000
+  flight-ms: 2000
+  low-tps-threshold: 15.0       # checks that depend on timing pause below this TPS (when TPS is known)
+
+checks:
+  invalid-values:   { enabled: true }
+  invalid-fields:   { enabled: true }
+  flight-toggle:    { enabled: true }
+  inventory:
+    enabled: true
+    window-grace-ms: 1500
+  packet-rate:
+    enabled: true
+    window-limit: 26            # movement packets per second tolerated
+    sustained-windows: 5        # consecutive over-limit seconds required
+    stall-grace-ms: 2500        # catch-up bursts after a client stall are ignored
+    flood-limit: 400
+    flood-sustained-windows: 3
+  auto-clicker:
+    enabled: true
+    window-samples: 60          # attack intervals per analysis window
+    max-gap-ms: 500             # a longer pause ends the run
+    min-mean-cps: 8.0           # windows slower than this are never suspicious
+    batch-ms: 3.0
+    max-batched-share: 0.10     # windows with more batched packets are skipped (lag/jitter)
+    dominant-tick-share: 0.80
+    max-tick-entropy-bits: 0.90
+    period-match-share: 0.92
+    max-period: 8
+    max-cv: 0.18
+    max-residual-ms: 1.2
+    required-signals: 2         # independent signal categories required (1-3)
+    include-air-swings: false   # also analyze swings that hit nothing (never while block-breaking)
+    dedupe-ms: 25.0             # attack + swing packets this close are the same click
+    min-tps: 18.0
+    max-jitter-ms: 40.0
+    buffer-threshold: 1.0
+    buffer-decay: 0.5
+  movement:
+    enabled: true
+    speed-factor: 6.0           # allowed horizontal blocks per packet = movement-speed attribute * factor + base
+    speed-base: 0.1
+    fly-factor: 22.0
+    max-step-up: 0.62
+    jump-boost-per-level: 0.35
+    air-rise-limit: 1.45
+    hover-packets: 14
+    buffer-threshold: 10.0
+    buffer-decay: 0.25
+  reach:
+    enabled: true
+    tolerance: 0.5
+    latency-cap-ms: 300
+    latency-blocks-per-second: 6.0
+    creative-bonus: 2.0
+    buffer-threshold: 3.0
+    buffer-decay: 0.5
+
+# Administrative auditing. Entries are kept separate from gameplay suspicions.
+# A plugin cannot give tamper-proof protection against someone who controls the server process, its files or the console.
+audit:
+  enabled: true
+  op-interval-ticks: 100        # operator list reconciliation interval
+  reconcile-per-run: 4          # players reconciled per run (tags, teams, permissions), round-robin
+  event-correlation-ms: 3000    # a command and an event closer than this are correlated
+  reconcile-correlation-ms: 10000
+  console-authorized: true      # console actions count as authorized
+  trusted-uuids: []             # subjects never flagged ATTENTION when they gain privileges (player UUIDs)
+  authorized-actors: []         # player UUIDs allowed to perform administrative changes
+  monitored:
+    op: true
+    game-mode: true
+    permission-groups: true
+    tags: true
+    teams: true
+  sensitive-tags: []            # scoreboard tags whose addition by an unauthorized actor needs attention
+  monitored-permissions: []     # permission nodes watched when no permission plugin integration is available
+  notify-authorized-changes: false
+  notify-no-change: false
+
+storage:
+  max-entries: 5000
+  max-bytes: 5000000
+  retention-days: 14
+  queue-capacity: 2048
+  memory-per-player: 100
+  memory-global: 500

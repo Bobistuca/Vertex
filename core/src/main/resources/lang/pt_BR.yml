@@ -1,0 +1,154 @@
+# Vertex - mensagens em Português (Brasil).
+# Valores usam MiniMessage. Tags de paleta: <primary> (verde claro), <secondary> (verde escuro), <text> (branco).
+# Valores controlados por jogadores são sempre inseridos como texto escapado; nunca são interpretados.
+prefix: "<primary><bold>[Vertex]</bold></primary>"
+
+level:
+  low: "baixa"
+  medium: "média"
+  high: "alta"
+  established: "protocolo"
+
+kind:
+  suspicion: "Suspeita"
+  established: "Contradição estabelecida"
+  admin: "Alteração administrativa"
+
+alert:
+  line: "{prefix} <text><player></text> <secondary>•</secondary> <primary><check></primary> <secondary>•</secondary> <text><count>x</text> <secondary>•</secondary> <primary><symbol> <label></primary><secondary>:</secondary> <text><level></text>"
+  actionbar: "<primary><bold>Vertex</bold></primary> <secondary>•</secondary> <text><player> · <check> · <count>x</text>"
+  hover:
+    title: "<primary><bold><check></bold></primary> <secondary>(<kind>)</secondary>"
+    reason: "<primary>Motivo:</primary> <text><reason></text>"
+    measurement: "<secondary>▸</secondary> <text><name></text><secondary>:</secondary> <text><value></text>"
+    context: "<primary>Contexto:</primary> <text>latência <ping> · TPS <tps> · modo <mode></text>"
+    window: "<primary>Janela:</primary> <text><count> incidente(s) em <seconds> s</text>"
+    footer: "<secondary>Confiança indica a concordância de sinais; não é uma probabilidade.</secondary>"
+  suppressed: "{prefix} <text><count> alerta(s) adicionais foram limitados pela taxa máxima.</text>"
+
+reason:
+  AutoClickerPattern: "Uma janela completa de ataques apresentou regularidade em vários sinais independentes. O servidor só vê pacotes, não cliques físicos; isto é uma suspeita estatística."
+  PacketRateAnomaly: "Pacotes de movimento acima da taxa esperada por vários segundos seguidos, sem pausa anterior. Lag e proxies também podem causar isso."
+  PacketFlood: "Taxa total de pacotes recebidos muito acima do comportamento normal por segundos consecutivos."
+  MovementSpeed: "Deslocamento horizontal por pacote repetidamente acima do limite derivado dos atributos conhecidos pelo servidor."
+  MovementAscent: "Subida acima do que um pulo, degrau ou efeito conhecido pelo servidor permite."
+  MovementHover: "Parado no ar, sem bloco abaixo e sem efeito do servidor que explique."
+  ReachDistance: "Ataques repetidos vindos de além do alcance conhecido pelo servidor mais a tolerância de latência."
+  InvalidNumericValue: "Pacote com coordenada ou rotação que um cliente sem modificações não envia."
+  InvalidPacketField: "Campo de pacote fora do intervalo válido do protocolo."
+  SelfAttack: "O cliente atacou a própria entidade, o que um cliente sem modificações não faz."
+  ImpossibleFlightToggle: "O cliente informou estar voando sem que o servidor tenha concedido voo."
+  InventoryWindowMismatch: "O cliente clicou em um contêiner que o servidor não tem aberto para ele."
+
+admin:
+  line: "{prefix} <primary><symbol> <label></primary> <secondary>•</secondary> <text><subject></text> <secondary>•</secondary> <primary><aspect></primary> <secondary>•</secondary> <text><before> → <after></text> <secondary>•</secondary> <primary>Origem</primary><secondary>:</secondary> <text><actor></text>"
+  nochange: "{prefix} <primary><symbol> <label></primary> <secondary>•</secondary> <primary><aspect></primary> <secondary>•</secondary> <text><subject></text> <secondary>•</secondary> <text>tentativa sem efeito (o estado já era esse)</text> <secondary>•</secondary> <primary>Origem</primary><secondary>:</secondary> <text><actor></text>"
+  hover:
+    title: "<primary><bold><aspect></bold></primary> <secondary>(<outcome>)</secondary>"
+    source: "<primary>Origem:</primary> <text><actor> <established></text>"
+    command: "<primary>Comando:</primary> <text><command></text>"
+    note: "<secondary>Origem desconhecida significa que não foi possível estabelecê-la, não que o jogador afetado seja o responsável.</secondary>"
+  actor:
+    console: "console"
+    unknown: "desconhecida"
+    established: "(estabelecida)"
+    notestablished: "(não estabelecida)"
+  outcome:
+    attempt: "tentativa de comando"
+    changed: "alteração confirmada"
+    nochange: "sem alteração"
+  label:
+    attention: "Atenção administrativa"
+    info: "Alteração administrativa"
+    nochange: "Operação repetida"
+  aspect:
+    Admin.Op: "Status de OP"
+    Admin.GameMode: "Modo de jogo"
+    Admin.PermissionGroup: "Grupo de permissão"
+    Admin.PermissionNode: "Permissão"
+    Admin.ScoreboardTag: "Tag de scoreboard"
+    Admin.Team: "Equipe/prefixo"
+
+client:
+  header: "{prefix} <primary><symbol> Informações do cliente</primary> <secondary>•</secondary> <text><player></text> <secondary>(<uuid>)</secondary>"
+  brand: "<secondary>▸</secondary> <primary>Marca:</primary> <text><brand></text> <secondary>[<provenance>]</secondary>"
+  protocol: "<secondary>▸</secondary> <primary>Protocolo:</primary> <text><protocol></text> <secondary>[<provenance>]</secondary>"
+  version: "<secondary>▸</secondary> <primary>Versão:</primary> <text><version></text> <secondary>[<provenance>]</secondary>"
+  channels: "<secondary>▸</secondary> <primary>Canais:</primary> <text><channels></text> <secondary>[<provenance>]</secondary>"
+  injection: "<secondary>▸</secondary> <primary>Injeção:</primary> <text>não verificável a partir de dados do servidor</text>"
+  timeout: "<secondary>Algumas informações não chegaram dentro do prazo e constam como desconhecidas.</secondary>"
+  note: "<secondary>Dados do cliente não são confiáveis. Cliente modificado ou marca \"vanilla\" não prova nada por si só.</secondary>"
+  none: "desconhecido"
+
+provenance:
+  reported: "informado"
+  inferred: "inferido"
+  unknown: "desconhecido"
+
+command:
+  no-permission: "{prefix} <text>Você não tem permissão para usar este comando.</text>"
+  unknown-sub: "{prefix} <text>Subcomando desconhecido: <sub>. Use /vertex ajuda.</text>"
+  player-not-found: "{prefix} <text>Jogador não encontrado: <name></text>"
+  player-only: "{prefix} <text>Este comando só pode ser usado por um jogador.</text>"
+  usage: "{prefix} <text>Uso: <usage></text>"
+  help:
+    header: "{prefix} <primary>Comandos</primary>"
+    alerts: "<secondary>▸</secondary> <primary>/vertex alertas</primary> <text>- liga/desliga seus alertas pessoais</text>"
+    inspect: "<secondary>▸</secondary> <primary>/vertex inspecionar [jogador]</primary> <text>- estado de detecção e cliente</text>"
+    history: "<secondary>▸</secondary> <primary>/vertex historico [jogador] [n]</primary> <text>- evidências recentes</text>"
+    status: "<secondary>▸</secondary> <primary>/vertex status</primary> <text>- saúde, verificações e capacidades</text>"
+    reload: "<secondary>▸</secondary> <primary>/vertex recarregar</primary> <text>- recarrega a configuração com segurança</text>"
+  alerts:
+    enabled: "{prefix} <text>Seus alertas pessoais foram</text> <primary>ativados</primary><text>.</text>"
+    disabled: "{prefix} <text>Seus alertas pessoais foram</text> <primary>desativados</primary><text>.</text>"
+    not-eligible: "{prefix} <text>Você não é um destinatário elegível; a preferência foi salva, mas nenhum alerta será recebido.</text>"
+  line: "<secondary>▸</secondary> <primary><label></primary><secondary>:</secondary> <text><value></text>"
+  inspect:
+    header: "{prefix} <primary>Inspeção</primary> <secondary>•</secondary> <text><player></text> <secondary>(<uuid>)</secondary>"
+    none: "<secondary>Nenhum estado de detecção para este jogador ainda.</secondary>"
+  history:
+    header: "{prefix} <primary>Histórico</primary> <secondary>•</secondary> <text><scope> (<count>)</text>"
+    entry: "<secondary>▸</secondary> <text><time></text> <secondary>•</secondary> <text><player></text> <secondary>•</secondary> <primary><check></primary> <secondary>•</secondary> <text><count>x · <kind></text>"
+    empty: "<secondary>Nenhuma evidência registrada.</secondary>"
+  status:
+    header: "{prefix} <primary>Estado do Vertex</primary>"
+    check-active: "<secondary>▸</secondary> <primary>ativa</primary> <text><check></text>"
+    check-inactive: "<secondary>▸</secondary> <secondary>inativa</secondary> <text><check> - <reason></text>"
+  reload:
+    ok: "{prefix} <text>Configuração recarregada com sucesso.</text>"
+    failed: "{prefix} <text>Recarga recusada; a última configuração válida continua ativa.</text>"
+    problem: "<secondary>▸</secondary> <text><problem></text>"
+
+label:
+  online: "Online"
+  gamemode: "Modo de jogo"
+  ping: "Latência"
+  tps: "TPS"
+  incidents: "Incidentes"
+  last: "Último incidente"
+  windows: "Janelas de cliques"
+  client: "Cliente"
+  platform: "Plataforma"
+  minecraft: "Minecraft"
+  java: "Java"
+  messaging: "Mensagens"
+  packets: "Observação de pacotes"
+  metrics: "Métricas do servidor"
+  storage: "Armazenamento"
+  audit: "Auditoria"
+  recipients: "Destinatários"
+  language: "Idioma"
+  dependency: "Dependência"
+  health: "Saúde"
+  capabilities: "Capacidades"
+  never: "nunca"
+  unknown: "desconhecido"
+
+startup:
+  banner: "Vertex em execução: observação, evidências e alertas privados. Nenhuma punição automática."
+  platform: "Plataforma detectada: <platform> (Minecraft <minecraft>, Java <java>)."
+  packets: "Observação de pacotes: <state>."
+  messaging: "Mensagens ricas: <state>."
+  metrics: "TPS/MSPT: <state>."
+  limited: "Capacidade indisponível: <what>. Verificações dependentes ficam inativas."
+  shutdown: "Vertex encerrado."
