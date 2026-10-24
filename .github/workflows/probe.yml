@@ -4,82 +4,79 @@ on:
   push:
     branches: [ "claude/vertex-minecraft-anticheat-5ldbyr" ]
     paths: [ ".github/workflows/probe.yml" ]
+permissions:
+  contents: write
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '25' }
-      - name: Fetch jars
+      - name: Resolve APIs
         run: |
-          mkdir -p j && cd j
-          PE=https://repo.codemc.io/repository/maven-releases/com/github/retrooper
-          curl -sSLf -o pe-spigot.jar $PE/packetevents-spigot/2.14.0/packetevents-spigot-2.14.0.jar
-          curl -sSLf -o pe-api.jar $PE/packetevents-api/2.14.0/packetevents-api-2.14.0.jar
-          curl -sSLf -o pe-spigot.pom $PE/packetevents-spigot/2.14.0/packetevents-spigot-2.14.0.pom
-          curl -sSLf -o pe-api.pom $PE/packetevents-api/2.14.0/packetevents-api-2.14.0.pom
-          for v in 26.1 26.2 26.3; do
-            B=https://hub.spigotmc.org/nexus/content/repositories/snapshots/org/spigotmc/spigot-api/$v-R0.1-SNAPSHOT
-            curl -sSLf $B/maven-metadata.xml -o meta-$v.xml
-            echo "== spigot-api $v"; grep -E "timestamp|buildNumber|<value>" meta-$v.xml | head -8
-            T=$(grep -m1 '<timestamp>' meta-$v.xml | sed 's/.*>\(.*\)<.*/\1/'); N=$(grep -m1 '<buildNumber>' meta-$v.xml | sed 's/.*>\(.*\)<.*/\1/')
-            curl -sSLf -o spigot-api-$v.jar $B/spigot-api-$v-R0.1-$T-$N.jar
+          mkdir -p w && cd w
+          mk() { # name repoId repoUrl dep-xml
+            mkdir -p $1 && cat > $1/pom.xml <<POM
+          <project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+          <groupId>p</groupId><artifactId>$1</artifactId><version>1</version>
+          <repositories><repository><id>r</id><url>$2</url></repository></repositories>
+          <dependencies>$3</dependencies></project>
+          POM
+            (cd $1 && mvn -q -B dependency:copy-dependencies -DoutputDirectory=lib 2>&1 | tail -5; ls lib | head -50)
+          }
+          mk spigot261 https://hub.spigotmc.org/nexus/content/repositories/snapshots/ "<dependency><groupId>org.spigotmc</groupId><artifactId>spigot-api</artifactId><version>26.1-R0.1-SNAPSHOT</version></dependency>"
+          mk spigot263 https://hub.spigotmc.org/nexus/content/repositories/snapshots/ "<dependency><groupId>org.spigotmc</groupId><artifactId>spigot-api</artifactId><version>26.3-R0.1-SNAPSHOT</version></dependency>"
+          PV=$(curl -sSL https://repo.papermc.io/repository/maven-public/io/papermc/paper/paper-api/maven-metadata.xml | grep -oE "<version>26\.1\.2\.build[^<]*" | sed 's/<version>//' | tail -1); echo "paper 26.1.2 -> $PV"
+          mk paper261 https://repo.papermc.io/repository/maven-public/ "<dependency><groupId>io.papermc.paper</groupId><artifactId>paper-api</artifactId><version>$PV</version></dependency>"
+          mkdir -p pe && cd pe && P=https://repo.codemc.io/repository/maven-releases/com/github/retrooper && curl -sSLfO $P/packetevents-spigot/2.14.0/packetevents-spigot-2.14.0.jar && curl -sSLfO $P/packetevents-api/2.14.0/packetevents-api-2.14.0.jar && curl -sSLfO $P/packetevents-netty-common/2.14.0/packetevents-netty-common-2.14.0.jar; ls
+      - name: Inspect
+        run: |
+          mkdir -p out
+          { 
+          PE=$(ls w/pe/*.jar | tr '\n' ':')
+          pe() { echo "#### $1"; javap -public -cp "$PE" "$@" 2>&1 | sed 's/com.github.retrooper.packetevents.//g' | cut -c1-260 | head -${N:-70}; }
+          for c in wrapper.play.client.WrapperPlayClientAttack wrapper.play.client.WrapperPlayClientPunch wrapper.play.client.WrapperPlayClientPlayerDigging 'wrapper.play.client.WrapperPlayClientPlayerDigging$Action' protocol.world.Location wrapper.common.client.WrapperCommonClientPluginMessage wrapper.play.client.WrapperPlayClientCloseWindow wrapper.play.client.WrapperPlayClientPlayerPosition wrapper.play.client.WrapperPlayClientClientTickEnd protocol.packettype.PacketTypeCommon 'wrapper.play.client.WrapperPlayClientClickWindow$WindowClickType' 'protocol.ConnectionState' protocol.player.UserProfile PacketEventsAPI; do N=70 pe com.github.retrooper.packetevents.$c; done
+          echo "#### attack-ish wrappers"; unzip -Z1 w/pe/packetevents-api-2.14.0.jar | grep -iE "client/.*(Attack|Punch|Interact|Spectate)" 
+          echo "#### PacketEventsAPI methods"; javap -public -cp "$PE" com.github.retrooper.packetevents.PacketEventsAPI | cut -c1-200 | grep -E "get|load|init|terminate|isLoaded|isInitialized" | sed 's/com.github.retrooper.packetevents.//g'
+          echo "#### EventManager"; javap -public -cp "$PE" com.github.retrooper.packetevents.event.EventManager | sed 's/com.github.retrooper.packetevents.//g' | cut -c1-200
+          } > out/pe.txt 2>&1
+          for t in spigot261 spigot263 paper261; do
+            CP=$(ls w/$t/lib/*.jar | tr '\n' ':'); 
+            {
+            echo "================ $t"; ls w/$t/lib
+            j() { echo "#### $1"; javap -public -cp "$CP" "$1" | cut -c1-230 | grep -E "${2:-.}" | head -${N:-60}; }
+            j net.md_5.bungee.api.chat.HoverEvent "HoverEvent\(|Action"
+            j net.md_5.bungee.api.chat.TextComponent "TextComponent\(|setColor|setBold|setHoverEvent|addExtra"
+            j net.md_5.bungee.api.ChatColor " of\(|getColor"
+            j net.md_5.bungee.api.chat.hover.content.Text "Text\("
+            j org.bukkit.Bukkit "getTPS|AverageTickTime|getTickTimes|getOperators|spigot\(|getOnlinePlayers|isPrimaryThread|getScoreboardManager|getBannedPlayers"
+            j org.bukkit.Server "getTPS|AverageTickTime|getTickTimes|isPrimaryThread|getOperators|getMinecraftVersion|getBukkitVersion|getVersion\(\)"
+            j 'org.bukkit.Server$Spigot' "getTPS|sendMessage"
+            j org.bukkit.entity.Player "getPing|isOp|getGameMode|getClientBrandName|getScoreboardTags|spigot\(|sendActionBar|isFlying|getAllowFlight|isGliding|isSwimming|isInsideVehicle|isOnGround|getLocale|getFlySpeed|getWalkSpeed|hasPermission|getEyeLocation|isSprinting|isSneaking|getActivePotionEffects|getAttribute|getUniqueId|isClimbing|isInWater|getVelocity|isRiptiding|getInventory|getOpenInventory|getBoundingBox"
+            j 'org.bukkit.entity.Player$Spigot' "sendMessage|getPing"
+            j org.bukkit.entity.Entity "getScoreboardTags|getBoundingBox|getEntityId|getVelocity|getNearbyEntities|isOnGround|getVehicle|getFallDistance"
+            j org.bukkit.attribute.Attribute "MOVEMENT_SPEED|INTERACTION_RANGE|JUMP_STRENGTH|GRAVITY|FLYING_SPEED|STEP_HEIGHT|SAFE_FALL|SCALE"
+            j org.bukkit.GameMode "static final"
+            j org.bukkit.scoreboard.Team "getPrefix|prefix|getSuffix|getName|hasEntry|getEntries|getDisplayName"
+            j org.bukkit.scoreboard.Scoreboard "getEntryTeam|getTeams|getTeam"
+            j org.bukkit.event.player.PlayerGameModeChangeEvent "public"
+            j org.bukkit.event.server.ServerCommandEvent "public"
+            j org.bukkit.event.player.PlayerCommandPreprocessEvent "public"
+            j org.bukkit.event.player.PlayerRegisterChannelEvent "public"
+            j org.bukkit.event.inventory.InventoryOpenEvent "public"
+            j org.bukkit.event.player.PlayerQuitEvent "public"
+            j org.bukkit.event.entity.EntityToggleGlideEvent "public"
+            j org.bukkit.event.entity.EntityDamageByEntityEvent "public"
+            j org.bukkit.scheduler.BukkitScheduler "runTask|runTaskTimer|runTaskAsynchronously|runTaskLater"
+            j org.bukkit.plugin.PluginDescriptionFile "getAPIVersion|getVersion"
+            j org.bukkit.command.TabExecutor "public"
+            j org.bukkit.command.CommandSender "public"
+            unzip -p w/$t/lib/$(ls w/$t/lib | grep -E "^(spigot|paper)-api" | head -1) plugin.yml 2>/dev/null | head -5
+            echo "-- adventure native?"; unzip -Z1 w/$t/lib/$(ls w/$t/lib | grep -E "^(spigot|paper)-api" | head -1) | grep -cE "^net/kyori" 
+            ls w/$t/lib | grep -iE "kyori|adventure|snakeyaml|gson|bungee" 
+            } > out/$t.txt 2>&1
           done
-          ls -la
-      - name: PacketEvents inspection
+          wc -c out/*
+      - name: Publish probe output to branch
         run: |
-          cd j
-          echo "== pe-spigot pom"; cat pe-spigot.pom | head -80
-          echo "== pe-api pom deps"; grep -E "artifactId|version|scope" pe-api.pom | head -60
-          echo "== pe-spigot top-level entries"; unzip -Z1 pe-spigot.jar | awk -F/ '{print $1"/"$2"/"$3"/"$4}' | sort | uniq -c | sort -rn | head -40
-          echo "== services"; unzip -Z1 pe-spigot.jar | grep -E "META-INF/(services|MANIFEST)" ; unzip -Z1 pe-spigot.jar | grep -E "plugin.yml|\.yml"
-          echo "== pe-api top"; unzip -Z1 pe-api.jar | awk -F/ '{print $1"/"$2"/"$3"/"$4}' | sort | uniq -c | sort -rn | head -30
-          unzip -p pe-spigot.jar plugin.yml || true
-          CP=pe-spigot.jar:pe-api.jar
-          for c in io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder com.github.retrooper.packetevents.PacketEvents com.github.retrooper.packetevents.settings.PacketEventsSettings com.github.retrooper.packetevents.event.PacketListenerAbstract com.github.retrooper.packetevents.event.PacketReceiveEvent com.github.retrooper.packetevents.event.PacketListenerPriority com.github.retrooper.packetevents.event.ProtocolPacketEvent com.github.retrooper.packetevents.protocol.player.User com.github.retrooper.packetevents.manager.player.PlayerManager com.github.retrooper.packetevents.event.UserConnectEvent com.github.retrooper.packetevents.event.UserLoginEvent com.github.retrooper.packetevents.event.UserDisconnectEvent com.github.retrooper.packetevents.event.PacketSendEvent com.github.retrooper.packetevents.protocol.player.ClientVersion com.github.retrooper.packetevents.wrapper.PacketWrapper; do echo "#### $c"; javap -public -cp $CP $c 2>&1 | head -90; done
-      - name: PacketEvents wrappers
-        run: |
-          cd j
-          CP=pe-spigot.jar:pe-api.jar
-          unzip -Z1 pe-api.jar | grep -E "wrapper/(play|configuration)/client/" | sed 's/\.class//;s#/#.#g' | grep -E "Flying|Position|Rotation|InteractEntity|Animation|ClickWindow|PluginMessage|ClientSettings|PlayerAbilities|EntityAction|KeepAlive|Pong|HeldItem|CreativeInventory|PlayerDigging|UseItem|ClientStatus|ChatMessage|VehicleMove|SteerVehicle|Teleport|CloseWindow|ClientTickEnd|PlayerInput" | sort
-          for c in WrapperPlayClientPlayerFlying WrapperPlayClientInteractEntity WrapperPlayClientAnimation WrapperPlayClientClickWindow WrapperPlayClientPluginMessage WrapperPlayClientHeldItemChange WrapperPlayClientKeepAlive WrapperPlayClientPlayerAbilities WrapperPlayClientEntityAction; do for p in play configuration; do n=com.github.retrooper.packetevents.wrapper.$p.client.$c; if javap -public -cp $CP $n >/dev/null 2>&1; then echo "#### $n"; javap -public -cp $CP $n | head -60; fi; done; done
-          echo "#### PacketType.Play.Client names"; javap -public -cp $CP 'com.github.retrooper.packetevents.protocol.packettype.PacketType$Play$Client' | grep -E "static final" | head -120
-          javap -public -cp $CP 'com.github.retrooper.packetevents.protocol.packettype.PacketType$Play$Client' | grep -E "isPlayerFlying|public static" | head
-          echo "#### InteractAction"; javap -public -cp $CP 'com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity$InteractAction'
-          echo "#### ClientVersion enum tail"; javap -public -cp $CP com.github.retrooper.packetevents.protocol.player.ClientVersion | grep -E "V_26|V_1_21_[0-9]+|UNKNOWN|getProtocolVersion|isNewerThan|getClientVersion" | head -30
-          echo "#### ServerVersion"; javap -public -cp $CP com.github.retrooper.packetevents.manager.server.ServerVersion | grep -E "V_26|V_1_21_11|getReleaseName" 
-          echo "#### SpigotReflectionUtil.. TPS"; javap -public -cp $CP io.github.retrooper.packetevents.util.SpigotReflectionUtil | grep -iE "tps|ping|getEntity|player" | head
-          echo "#### PlayerManager"; javap -public -cp $CP com.github.retrooper.packetevents.manager.player.PlayerManager | head -50
-      - name: Bukkit / Spigot API inspection
-        run: |
-          cd j
-          for v in 26.1 26.3; do
-            echo "========== spigot-api $v"
-            unzip -p spigot-api-$v.jar plugin.yml 2>/dev/null | head -3
-            unzip -Z1 spigot-api-$v.jar | grep -E "^net/md_5/bungee/api/chat/(HoverEvent|TextComponent|ComponentBuilder|hover/content/Text)\.class|^net/md_5/bungee/api/ChatColor.class|^net/kyori" | head -20
-            javap -public -cp spigot-api-$v.jar net.md_5.bungee.api.chat.HoverEvent | head -20
-            javap -public -cp spigot-api-$v.jar net.md_5.bungee.api.ChatColor | grep -E " of\(|getColor"
-            javap -public -cp spigot-api-$v.jar org.bukkit.Bukkit | grep -iE "getTPS|AverageTickTime|getOnlinePlayers|getScheduler|spigot\(|getOperators|getTickTimes|isPrimaryThread"
-            javap -public -cp spigot-api-$v.jar org.bukkit.entity.Player | grep -iE "getPing|isOp|getGameMode|getClientBrandName|getScoreboardTags|spigot\(|sendActionBar|isFlying|getAllowFlight|isGliding|isSwimming|isInsideVehicle|getPlayerTime|getLocale"
-            javap -public -cp spigot-api-$v.jar 'org.bukkit.entity.Player$Spigot' | grep -iE "sendMessage|getPing"
-            javap -public -cp spigot-api-$v.jar org.bukkit.Server | grep -iE "getTPS|getAverageTickTime|getTickTimes"
-            javap -public -cp spigot-api-$v.jar org.bukkit.entity.Entity | grep -iE "getScoreboardTags|addScoreboardTag|getVehicle|getFallDistance"
-            javap -public -cp spigot-api-$v.jar org.bukkit.GameMode
-            javap -public -cp spigot-api-$v.jar org.bukkit.attribute.Attribute | grep -E "MOVEMENT_SPEED|ENTITY_INTERACTION_RANGE|BLOCK_INTERACTION_RANGE|JUMP|STEP|SAFE_FALL|GRAVITY|FLYING"
-            javap -public -cp spigot-api-$v.jar org.bukkit.plugin.java.JavaPlugin | head -5
-            unzip -Z1 spigot-api-$v.jar | grep -E "org/bukkit/event/(server/ServerCommandEvent|player/(PlayerGameModeChangeEvent|PlayerCommandPreprocessEvent|PlayerJoinEvent|PlayerQuitEvent|PlayerTeleportEvent|PlayerRespawnEvent|PlayerChangedWorldEvent|PlayerVelocityEvent|PlayerToggleFlightEvent|PlayerRegisterChannelEvent|PlayerChannelEvent|PlayerKickEvent)|entity/(EntityDamageByEntityEvent|EntityPotionEffectEvent|EntityToggleGlideEvent|ExplosionPrimeEvent)|server/RemoteServerCommandEvent)\.class"
-          done
-      - name: Paper API inspection
-        run: |
-          cd j
-          B=https://repo.papermc.io/repository/maven-public/io/papermc/paper/paper-api
-          for v in 26.1.2 26.3; do
-            M=$(curl -sSL $B/maven-metadata.xml | grep -oE "<version>$v\.build[^<]*" | sed 's/<version>//' | tail -1); echo "paper-api version $v -> $M"
-            curl -sSLf -o paper-$v.jar $B/$M/paper-api-$M.jar || echo "jar fetch failed"
-            curl -sSLf -o paper-$v.pom $B/$M/paper-api-$M.pom && grep -E "artifactId|<version>" paper-$v.pom | head -40
-            unzip -p paper-$v.jar paper-plugin.yml 2>/dev/null | head -3
-            javap -public -cp paper-$v.jar org.bukkit.Server | grep -iE "getTPS|getAverageTickTime|getTickTimes|getCurrentTick"
-            javap -public -cp paper-$v.jar org.bukkit.entity.Player | grep -iE "getPing|getClientBrandName|sendActionBar|sendMessage\(net"
-            unzip -Z1 paper-$v.jar | grep -E "^net/md_5/bungee/api/chat/HoverEvent.class" || echo "NO bungee chat in paper-api $v"
-            unzip -Z1 paper-$v.jar | grep -E "org/bukkit/event/player/(PlayerClientBrand|PlayerJoin)" 
-          done
+          cd out && git init -q && git config user.name probe && git config user.email probe@example.com && git checkout -q -b probe-output && git add . && git commit -qm "probe output" && git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" probe-output
