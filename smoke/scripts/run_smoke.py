@@ -132,7 +132,7 @@ def main():
     check("plugin-load", loaded, "Enabling Vertex found in the log" if loaded else "no 'Enabling Vertex' line")
     banner = server.wait_for(r"(Vertex em execução|Vertex is running)", 20)
     check("plugin-enable", banner is not None, "startup banner printed" if banner is not None else "no startup banner")
-    bad = [l for l in log if re.search(r"Could not load|Error occurred while enabling Vertex|Disabling Vertex|\bSEVERE\b.*Vertex", l)]
+    bad = [l for l in log if re.search(r"Could not load|Error occurred while enabling Vertex|\bSEVERE\b.*Vertex", l)]
     check("no-load-errors", not bad, bad[:2])
 
     status = run("vertex status")

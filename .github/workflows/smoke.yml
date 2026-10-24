@@ -1,0 +1,184 @@
+name: Smoke
+
+# Startup and functionality smoke tests on real servers. Server jars are obtained from the official tooling
+# (Spigot BuildTools for CraftBukkit and Spigot, the PaperMC download API for Paper) at run time and are never
+# committed. Results are published to the "smoke-results" branch and to the run summary.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'core/**'
+      - 'paper/**'
+      - 'plugin/**'
+      - 'smoke/**'
+      - '.github/workflows/smoke.yml'
+
+permissions:
+  contents: read
+
+env:
+  VERTEX_BUILD_ID: build-${{ github.sha }}
+
+jobs:
+  jar:
+    name: Build Vertex.jar and the helper
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - run: ./gradlew :plugin:shadowJar :smoke:helper:jar --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smoke-jars
+          path: |
+            plugin/build/libs/Vertex.jar
+            smoke/helper/build/libs/VertexSmokeHelper.jar
+          retention-days: 1
+          if-no-files-found: error
+
+  servers:
+    name: Build CraftBukkit and Spigot ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [ '26.1.2', '26.2', '26.3' ]
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Download BuildTools and build
+        run: |
+          set -e
+          mkdir -p bt out && cd bt
+          curl -fsSL -o BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+          BT_BUILD=$(curl -fsSL "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/api/json?tree=number" | grep -oE '"number":[0-9]+' | cut -d: -f2)
+          curl -fsSL "https://hub.spigotmc.org/versions/${{ matrix.version }}.json" -o ../out/versions.json
+          java -jar BuildTools.jar --rev "${{ matrix.version }}" --compile craftbukkit,spigot --output-dir ../out
+          cd ../out
+          { echo "buildtools=$BT_BUILD"; echo "spigot_build=$(grep -m1 '"name"' versions.json | sed 's/[^0-9]//g')"; \
+            echo "spigot_refs:"; grep -E '"(Bukkit|CraftBukkit|Spigot|BuildData)"' versions.json; } > build-info.txt
+          ls -l; cat build-info.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: servers-${{ matrix.version }}
+          path: |
+            out/craftbukkit-*.jar
+            out/spigot-*.jar
+            out/build-info.txt
+          retention-days: 1
+          if-no-files-found: error
+
+  smoke:
+    name: ${{ matrix.impl }} ${{ matrix.version }}
+    needs: [ jar, servers ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        impl: [ craftbukkit, spigot, paper ]
+        version: [ '26.1.2', '26.2', '26.3' ]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v5
+        with:
+          name: smoke-jars
+          path: jars
+      - uses: actions/download-artifact@v5
+        with:
+          name: servers-${{ matrix.version }}
+          path: servers
+      - name: Obtain the server
+        id: server
+        run: |
+          set -e
+          mkdir -p run
+          if [ "${{ matrix.impl }}" = "paper" ]; then
+            API="https://fill.papermc.io/v3/projects/paper/versions/${{ matrix.version }}/builds/latest"
+            curl -fsSL -H 'User-Agent: Bobistuca-Vertex-CI (https://github.com/Bobistuca/Vertex)' "$API" -o paper-build.json
+            python3 - <<'PY'
+          import json, urllib.request
+          d = json.load(open("paper-build.json"))
+          dl = d["downloads"]["server:default"]
+          req = urllib.request.Request(dl["url"], headers={"User-Agent": "Bobistuca-Vertex-CI (https://github.com/Bobistuca/Vertex)"})
+          open("run/server.jar", "wb").write(urllib.request.urlopen(req).read())
+          open("server-id.txt", "w").write(f"Paper {d.get('id')} ({d.get('channel')}) sha256={dl.get('checksums', {}).get('sha256', '?')}")
+          PY
+          else
+            cp "servers/${{ matrix.impl }}-${{ matrix.version }}.jar" run/server.jar
+            echo "BuildTools $(grep buildtools servers/build-info.txt | cut -d= -f2); Spigot build $(grep spigot_build servers/build-info.txt | cut -d= -f2)" > server-id.txt
+          fi
+          cat server-id.txt
+          echo "id=$(cat server-id.txt)" >> "$GITHUB_OUTPUT"
+      - name: Install the test client (Minecraft 26.1.x only)
+        if: matrix.version == '26.1.2'
+        run: cd smoke/scripts && npm install --no-audit --no-fund
+      - name: Run the smoke test
+        run: |
+          BOT=""
+          if [ "${{ matrix.version }}" = "26.1.2" ]; then BOT="--bot-version 26.1.2"; fi
+          python3 smoke/scripts/run_smoke.py --impl "${{ matrix.impl }}" --version "${{ matrix.version }}" \
+            --server-jar run/server.jar --vertex-jar jars/plugin/build/libs/Vertex.jar \
+            --helper-jar jars/smoke/helper/build/libs/VertexSmokeHelper.jar \
+            --workdir "$RUNNER_TEMP/server" --out "results/${{ matrix.impl }}-${{ matrix.version }}.json" \
+            --server-id "${{ steps.server.outputs.id }}" $BOT
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-result-${{ matrix.impl }}-${{ matrix.version }}
+          path: results/
+          retention-days: 14
+
+  report:
+    name: Publish results
+    needs: smoke
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: smoke-result-*
+          path: results
+          merge-multiple: true
+      - name: Summarize and publish
+        run: |
+          python3 - <<'PY'
+          import glob, json, os
+          rows = []
+          for f in sorted(glob.glob("results/*.json")):
+              d = json.load(open(f))
+              rows.append(d)
+          lines = ["| Implementation | Minecraft | Server build | Passed | Failed | Skipped |", "|---|---|---|---|---|---|"]
+          for d in rows:
+              i = d["info"]
+              lines.append(f"| {i['impl']} | {i['version']} | {i.get('server_id','')} | {d['passed']} | {d['failed']} | {d['skipped']} |")
+          detail = []
+          for d in rows:
+              i = d["info"]
+              detail.append(f"\n### {i['impl']} {i['version']}\n")
+              for r in d["results"]:
+                  detail.append(f"- **{r['status']}** `{r['name']}` {r['detail'][:160]}")
+          text = "\n".join(lines) + "\n" + "\n".join(detail) + "\n"
+          open("results/summary.md", "w").write(text)
+          open(os.environ["GITHUB_STEP_SUMMARY"], "a").write(text)
+          PY
+          cd results && git init -q && git config user.name smoke-report && git config user.email smoke-report@users.noreply.github.com \
+            && git checkout -q -b smoke-results && git add . && git commit -qm "Smoke test results for ${GITHUB_SHA}" \
+            && git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" smoke-results
