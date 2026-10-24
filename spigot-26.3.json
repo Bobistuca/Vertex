@@ -1,0 +1,207 @@
+{
+  "info": {
+    "impl": "spigot",
+    "version": "26.3",
+    "server_id": "BuildTools 201; Spigot build 4663",
+    "server_version_output": "This server is running Spigot version 4663-Spigot-bed90fc-c4db4c3 (MC: 26.3) (Implementing API version 26.3-R0.1-SNAPSHOT)\nChecking version, please wait...\n",
+    "status_output": "[Vertex] Estado do Vertex\n▸ Plataforma: Spigot (4663-Spigot-bed90fc-c4db4c3 (MC: 26.3))\n▸ Minecraft: 26.3\n▸ Java: 25.0.4.1\n▸ Mensagens: spigot-bungee-chat | hover=true | actionbar=true\n▸ Observação de pacotes: running | listener errors=0\n▸ Métricas do servidor: scheduler-derived | tps=unknown | mspt=unknown\n▸ Dependência: PacketEvents 2.14.0 (embedded, relocated); LuckPerms not detected\n▸ Saúde: processed=0 failures=0 dropped=0 queued=0 tracked=0 alerts=0 duplicates=0 suppressed=0 open=0\n▸ Armazenamento: written=0 dropped=0 failures=0 queued=0\n▸ Auditoria: on | pending=0 | aspects=6\n▸ Destinatários: operators=true permission=true gameModes=[CREATIVE]\n▸ Idioma: pt_BR\n▸ Capacidades: paper=false nativeAdventure=false spigotApi=true bungeeChat=true serverTps=false\n▸ ativa InvalidNumericValue\n▸ ativa InvalidPacketField\n▸ ativa SelfAttack\n▸ ativa ImpossibleFlightToggle\n▸ ativa InventoryWindowMismatch\n▸ ativa PacketRateAnomaly\n▸ ativa PacketFlood\n▸ ativa AutoClickerPattern\n▸ ativa MovementSpeed\n▸ ativa MovementAscent\n▸ ativa MovementHover\n▸ ativa ReachDistance\n",
+    "evidence_summary": {
+      "DETECTION/AutoClickerPattern/SUSPICION": 1,
+      "DETECTION/ReachDistance/SUSPICION": 1,
+      "ADMIN/Admin.Op/ADMIN": 6
+    },
+    "admin_rows": [
+      "V1\t1792881124057\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tbefore=;severity=INFO;after=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT",
+      "V1\t1792881128507\tADMIN\tf0edfa76-73d4-32b7-bfe7-ac249bc3340e\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tbefore=false;severity=INFO;after=true;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED",
+      "V1\t1792881132028\tADMIN\t-\tRconTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tbefore=;severity=INFO;after=;command=op RconTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT",
+      "V1\t1792881132473\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tbefore=;severity=INFO;after=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT",
+      "V1\t1792881133507\tADMIN\t60d22e33-19bf-30a3-b229-e7daf73651f8\tRconTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tbefore=false;severity=INFO;after=true;command=op RconTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED",
+      "V1\t1792881142507\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tbefore=;severity=INFO;after=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=NO_CHANGE"
+    ]
+  },
+  "results": [
+    {
+      "name": "server-start",
+      "status": "pass",
+      "detail": "23s to reach Done"
+    },
+    {
+      "name": "rcon-connect",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "server-identifies-expected-version",
+      "status": "pass",
+      "detail": "This server is running Spigot version 4663-Spigot-bed90fc-c4db4c3 (MC: 26.3) (Implementing API version 26.3-R0.1-SNAPSHOT)"
+    },
+    {
+      "name": "plugin-load",
+      "status": "pass",
+      "detail": "Enabling Vertex found in the log"
+    },
+    {
+      "name": "plugin-enable",
+      "status": "pass",
+      "detail": "startup banner printed"
+    },
+    {
+      "name": "no-load-errors",
+      "status": "pass",
+      "detail": "[]"
+    },
+    {
+      "name": "packet-listener-running",
+      "status": "pass",
+      "detail": "running | listener errors=0"
+    },
+    {
+      "name": "messaging-capability",
+      "status": "info",
+      "detail": "spigot-bungee-chat | hover=true | actionbar=true"
+    },
+    {
+      "name": "metrics-capability",
+      "status": "info",
+      "detail": "scheduler-derived | tps=unknown | mspt=unknown"
+    },
+    {
+      "name": "fallback-messenger-selected",
+      "status": "pass",
+      "detail": "expected spigot-bungee-chat; got spigot-bungee-chat | hover=true | actionbar=true"
+    },
+    {
+      "name": "checks-listed",
+      "status": "pass",
+      "detail": "12 lines mention active"
+    },
+    {
+      "name": "command-help",
+      "status": "pass",
+      "detail": "[Vertex] Comandos\n▸ /vertex alertas - liga/desliga seus alertas pessoais\n▸ /vertex inspecionar [jogador] - estado de det"
+    },
+    {
+      "name": "command-alias-vx",
+      "status": "pass",
+      "detail": "[Vertex] Comandos\n▸ /vertex alertas - liga/desliga seus alertas pessoais\n▸ /vertex inspecionar [jogador] - estado de det"
+    },
+    {
+      "name": "command-inspect-unknown-player",
+      "status": "pass",
+      "detail": "[Vertex] Jogador não encontrado: Nobody\n"
+    },
+    {
+      "name": "command-history",
+      "status": "pass",
+      "detail": "[Vertex] Histórico • * (0)\nNenhuma evidência registrada.\n"
+    },
+    {
+      "name": "command-alerts-console-refused",
+      "status": "pass",
+      "detail": "[Vertex] Este comando só pode ser usado por um jogador.\n"
+    },
+    {
+      "name": "command-unknown-sub",
+      "status": "pass",
+      "detail": "[Vertex] Subcomando desconhecido: nonsense. Use /vertex ajuda.\n"
+    },
+    {
+      "name": "helper-ran",
+      "status": "pass",
+      "detail": "['[22:31:55] [Server thread/INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED', '[22:31:59] [Server thread/INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE']"
+    },
+    {
+      "name": "aggregation-2x-single-message",
+      "status": "pass",
+      "detail": "1 message(s): ['[22:31:57] [Server thread/INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta']"
+    },
+    {
+      "name": "duplicate-observation-counted-once",
+      "status": "pass",
+      "detail": "1 message(s): ['[22:31:57] [Server thread/INFO]: [Vertex] [Vertex] SmokeSubject • ReachDistance • 1x • ⚠ Suspeita: média']"
+    },
+    {
+      "name": "alert-uses-identity-format",
+      "status": "pass",
+      "detail": "['[22:31:57] [Server thread/INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta']"
+    },
+    {
+      "name": "default-config-written",
+      "status": "pass",
+      "detail": "/home/runner/work/_temp/server/plugins/Vertex/config.yml"
+    },
+    {
+      "name": "reload-invalid-refused",
+      "status": "pass",
+      "detail": "[Vertex] Recarga recusada; a última configuração válida continua ativa.\n▸ alerts.aggregation-window-ms: must be between 200 and 60000\n"
+    },
+    {
+      "name": "reload-keeps-working-config",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "reload-valid-applied",
+      "status": "pass",
+      "detail": "[Vertex] Configuration reloaded successfully.\n"
+    },
+    {
+      "name": "language-switch-en_US",
+      "status": "pass",
+      "detail": "[Vertex] Commands\n▸ /vertex alerts - toggle your personal alerts\n▸ /vertex inspect [player] - detection and client state"
+    },
+    {
+      "name": "tick-rate-measured",
+      "status": "pass",
+      "detail": "scheduler-derived | tps=20.0 | mspt=50.0"
+    },
+    {
+      "name": "real-client-packets",
+      "status": "skipped",
+      "detail": "no protocol client available for this Minecraft version"
+    },
+    {
+      "name": "clean-shutdown",
+      "status": "pass",
+      "detail": "exit code 0"
+    },
+    {
+      "name": "shutdown-message",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "no-vertex-stack-traces",
+      "status": "pass",
+      "detail": "[]"
+    },
+    {
+      "name": "evidence-persisted-with-accurate-total",
+      "status": "pass",
+      "detail": "8 record(s); counts=[2]"
+    },
+    {
+      "name": "audit-op-attempts-recorded",
+      "status": "pass",
+      "detail": "2 attempt(s)"
+    },
+    {
+      "name": "audit-op-single-change-with-console-actor",
+      "status": "pass",
+      "detail": "[{'before': 'false', 'severity': 'INFO', 'after': 'true', 'command': 'op AuditTarget', 'actorKind': 'CONSOLE', 'actor': 'CONSOLE', 'actorEstablished': 'true', 'outcome': 'CHANGED'}]"
+    },
+    {
+      "name": "audit-repeated-op-is-no-change",
+      "status": "pass",
+      "detail": "1 no-change record(s)"
+    },
+    {
+      "name": "audit-rcon-command-visibility",
+      "status": "info",
+      "detail": "RCON op: 1 attempt(s) observed; change actor CONSOLE/established=true"
+    }
+  ],
+  "passed": 32,
+  "failed": 0,
+  "skipped": 1
+}

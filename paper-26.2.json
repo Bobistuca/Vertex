@@ -1,0 +1,207 @@
+{
+  "info": {
+    "impl": "paper",
+    "version": "26.2",
+    "server_id": "Paper 134 (STABLE) sha256=3cce0a4922baf79bd8e1275ee5ff9f073f24675770e09b0d4be9442d513e7a6b",
+    "server_version_output": "[22:31:20 INFO]: This server is running Paper version 26.2-134-ver/26.2@3e24be0 (2026-10-14T18:33:55Z) (Implementing API version 26.2.build.134-stable)",
+    "status_output": "[Vertex] Estado do Vertex\n▸ Plataforma: Paper (26.2-134-3e24be0 (MC: 26.2))\n▸ Minecraft: 26.2\n▸ Java: 25.0.4.1\n▸ Mensagens: paper-adventure | hover=true | actionbar=true\n▸ Observação de pacotes: running | listener errors=0\n▸ Métricas do servidor: server-api | tps=20.0 | mspt=0.4\n▸ Dependência: PacketEvents 2.14.0 (embedded, relocated); LuckPerms not detected\n▸ Saúde: processed=0 failures=0 dropped=0 queued=0 tracked=0 alerts=2 duplicates=1 suppressed=0 open=0\n▸ Armazenamento: written=2 dropped=0 failures=0 queued=0\n▸ Auditoria: on | pending=0 | aspects=6\n▸ Destinatários: operators=true permission=true gameModes=[CREATIVE]\n▸ Idioma: pt_BR\n▸ Capacidades: paper=true nativeAdventure=true spigotApi=true bungeeChat=true serverTps=true\n▸ ativa InvalidNumericValue\n▸ ativa InvalidPacketField\n▸ ativa SelfAttack\n▸ ativa ImpossibleFlightToggle\n▸ ativa InventoryWindowMismatch\n▸ ativa PacketRateAnomaly\n▸ ativa PacketFlood\n▸ ativa AutoClickerPattern\n▸ ativa MovementSpeed\n▸ ativa MovementAscent\n▸ ativa MovementHover\n▸ ativa ReachDistance\n",
+    "evidence_summary": {
+      "DETECTION/AutoClickerPattern/SUSPICION": 1,
+      "DETECTION/ReachDistance/SUSPICION": 1,
+      "ADMIN/Admin.Op/ADMIN": 6
+    },
+    "admin_rows": [
+      "V1\t1792881109829\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tafter=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=;severity=INFO",
+      "V1\t1792881111529\tADMIN\tf0edfa76-73d4-32b7-bfe7-ac249bc3340e\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tafter=true;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED;before=false;severity=INFO",
+      "V1\t1792881117786\tADMIN\t-\tRconTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tafter=;command=op RconTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=;severity=INFO",
+      "V1\t1792881117829\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tafter=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=;severity=INFO",
+      "V1\t1792881123529\tADMIN\t60d22e33-19bf-30a3-b229-e7daf73651f8\tRconTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tafter=true;command=op RconTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED;before=false;severity=INFO",
+      "V1\t1792881128529\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tafter=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=NO_CHANGE;before=;severity=INFO"
+    ]
+  },
+  "results": [
+    {
+      "name": "server-start",
+      "status": "pass",
+      "detail": "20s to reach Done"
+    },
+    {
+      "name": "rcon-connect",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "server-identifies-expected-version",
+      "status": "pass",
+      "detail": "[22:31:20 INFO]: This server is running Paper version 26.2-134-ver/26.2@3e24be0 (2026-10-14T18:33:55Z) (Implementing API version 26.2.build.134-stable)"
+    },
+    {
+      "name": "plugin-load",
+      "status": "pass",
+      "detail": "Enabling Vertex found in the log"
+    },
+    {
+      "name": "plugin-enable",
+      "status": "pass",
+      "detail": "startup banner printed"
+    },
+    {
+      "name": "no-load-errors",
+      "status": "pass",
+      "detail": "[]"
+    },
+    {
+      "name": "packet-listener-running",
+      "status": "pass",
+      "detail": "running | listener errors=0"
+    },
+    {
+      "name": "messaging-capability",
+      "status": "info",
+      "detail": "paper-adventure | hover=true | actionbar=true"
+    },
+    {
+      "name": "metrics-capability",
+      "status": "info",
+      "detail": "server-api | tps=20.0 | mspt=0.4"
+    },
+    {
+      "name": "paper-native-adventure-selected",
+      "status": "pass",
+      "detail": "paper-adventure | hover=true | actionbar=true"
+    },
+    {
+      "name": "checks-listed",
+      "status": "pass",
+      "detail": "12 lines mention active"
+    },
+    {
+      "name": "command-help",
+      "status": "pass",
+      "detail": "[Vertex] Comandos\n▸ /vertex alertas - liga/desliga seus alertas pessoais\n▸ /vertex inspecionar [jogador] - estado de det"
+    },
+    {
+      "name": "command-alias-vx",
+      "status": "pass",
+      "detail": "[Vertex] Comandos\n▸ /vertex alertas - liga/desliga seus alertas pessoais\n▸ /vertex inspecionar [jogador] - estado de det"
+    },
+    {
+      "name": "command-inspect-unknown-player",
+      "status": "pass",
+      "detail": "[Vertex] Jogador não encontrado: Nobody\n"
+    },
+    {
+      "name": "command-history",
+      "status": "pass",
+      "detail": "[Vertex] Histórico • * (2)\n▸ 2026-10-24 22:31:37 • SmokeSubject • ReachDistance • 1x · SUSPICION\n▸ 2026-10-24 22:31:37 •"
+    },
+    {
+      "name": "command-alerts-console-refused",
+      "status": "pass",
+      "detail": "[Vertex] Este comando só pode ser usado por um jogador.\n"
+    },
+    {
+      "name": "command-unknown-sub",
+      "status": "pass",
+      "detail": "[Vertex] Subcomando desconhecido: nonsense. Use /vertex ajuda.\n"
+    },
+    {
+      "name": "helper-ran",
+      "status": "pass",
+      "detail": "['[22:31:37 INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED', '[22:31:41 INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE']"
+    },
+    {
+      "name": "aggregation-2x-single-message",
+      "status": "pass",
+      "detail": "1 message(s): ['[22:31:39 INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta']"
+    },
+    {
+      "name": "duplicate-observation-counted-once",
+      "status": "pass",
+      "detail": "1 message(s): ['[22:31:39 INFO]: [Vertex] [Vertex] SmokeSubject • ReachDistance • 1x • ⚠ Suspeita: média']"
+    },
+    {
+      "name": "alert-uses-identity-format",
+      "status": "pass",
+      "detail": "['[22:31:39 INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta']"
+    },
+    {
+      "name": "default-config-written",
+      "status": "pass",
+      "detail": "/home/runner/work/_temp/server/plugins/Vertex/config.yml"
+    },
+    {
+      "name": "reload-invalid-refused",
+      "status": "pass",
+      "detail": "[Vertex] Recarga recusada; a última configuração válida continua ativa.\n▸ alerts.aggregation-window-ms: must be between 200 and 60000\n"
+    },
+    {
+      "name": "reload-keeps-working-config",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "reload-valid-applied",
+      "status": "pass",
+      "detail": "[Vertex] Configuration reloaded successfully.\n"
+    },
+    {
+      "name": "language-switch-en_US",
+      "status": "pass",
+      "detail": "[Vertex] Commands\n▸ /vertex alerts - toggle your personal alerts\n▸ /vertex inspect [player] - detection and client state"
+    },
+    {
+      "name": "tick-rate-measured",
+      "status": "pass",
+      "detail": "server-api | tps=20.0 | mspt=0.2"
+    },
+    {
+      "name": "real-client-packets",
+      "status": "skipped",
+      "detail": "no protocol client available for this Minecraft version"
+    },
+    {
+      "name": "clean-shutdown",
+      "status": "pass",
+      "detail": "exit code 0"
+    },
+    {
+      "name": "shutdown-message",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "no-vertex-stack-traces",
+      "status": "pass",
+      "detail": "[]"
+    },
+    {
+      "name": "evidence-persisted-with-accurate-total",
+      "status": "pass",
+      "detail": "8 record(s); counts=[2]"
+    },
+    {
+      "name": "audit-op-attempts-recorded",
+      "status": "pass",
+      "detail": "2 attempt(s)"
+    },
+    {
+      "name": "audit-op-single-change-with-console-actor",
+      "status": "pass",
+      "detail": "[{'after': 'true', 'command': 'op AuditTarget', 'actorKind': 'CONSOLE', 'actor': 'CONSOLE', 'actorEstablished': 'true', 'outcome': 'CHANGED', 'before': 'false', 'severity': 'INFO'}]"
+    },
+    {
+      "name": "audit-repeated-op-is-no-change",
+      "status": "pass",
+      "detail": "1 no-change record(s)"
+    },
+    {
+      "name": "audit-rcon-command-visibility",
+      "status": "info",
+      "detail": "RCON op: 1 attempt(s) observed; change actor CONSOLE/established=true"
+    }
+  ],
+  "passed": 32,
+  "failed": 0,
+  "skipped": 1
+}

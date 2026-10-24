@@ -1,0 +1,264 @@
+{
+  "info": {
+    "impl": "craftbukkit",
+    "version": "26.1.2",
+    "server_id": "BuildTools 201; Spigot build 4632",
+    "server_version_output": "This server is running CraftBukkit version 4632-Bukkit-690a402 (MC: 26.1.2) (Implementing API version 26.1.2-R0.1-SNAPSHOT)\nChecking version, please wait...\n",
+    "status_output": "[Vertex] Estado do Vertex\n▸ Plataforma: CraftBukkit (4632-Bukkit-690a402 (MC: 26.1.2))\n▸ Minecraft: 26.1.2\n▸ Java: 25.0.4.1\n▸ Mensagens: bukkit-legacy-text | hover=false | actionbar=false\n▸ Observação de pacotes: running | listener errors=0\n▸ Métricas do servidor: scheduler-derived | tps=unknown | mspt=unknown\n▸ Dependência: PacketEvents 2.14.0 (embedded, relocated); LuckPerms not detected\n▸ Saúde: processed=0 failures=0 dropped=0 queued=0 tracked=0 alerts=0 duplicates=0 suppressed=0 open=0\n▸ Armazenamento: written=0 dropped=0 failures=0 queued=0\n▸ Auditoria: on | pending=0 | aspects=6\n▸ Destinatários: operators=true permission=true gameModes=[CREATIVE]\n▸ Idioma: pt_BR\n▸ Capacidades: paper=false nativeAdventure=false spigotApi=false bungeeChat=false serverTps=false\n▸ ativa InvalidNumericValue\n▸ ativa InvalidPacketField\n▸ ativa SelfAttack\n▸ ativa ImpossibleFlightToggle\n▸ ativa InventoryWindowMismatch\n▸ ativa PacketRateAnomaly\n▸ ativa PacketFlood\n▸ ativa AutoClickerPattern\n▸ ativa MovementSpeed\n▸ ativa MovementAscent\n▸ ativa MovementHover\n▸ ativa ReachDistance\n",
+    "evidence_summary": {
+      "DETECTION/AutoClickerPattern/SUSPICION": 4,
+      "DETECTION/ReachDistance/SUSPICION": 4,
+      "ADMIN/Admin.Op/ADMIN": 9,
+      "CLIENT/ClientInfo/INFO": 1,
+      "ADMIN/Admin.GameMode/ADMIN": 6,
+      "DETECTION/InvalidPacketField/ESTABLISHED": 1
+    },
+    "admin_rows": [
+      "V1\t1792881149937\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=",
+      "V1\t1792881154587\tADMIN\tf0edfa76-73d4-32b7-bfe7-ac249bc3340e\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=true;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED;before=false",
+      "V1\t1792881157901\tADMIN\t-\tRconTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=op RconTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=",
+      "V1\t1792881158036\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=",
+      "V1\t1792881160587\tADMIN\t60d22e33-19bf-30a3-b229-e7daf73651f8\tRconTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=true;command=op RconTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED;before=false",
+      "V1\t1792881168587\tADMIN\t-\tAuditTarget\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=op AuditTarget;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=NO_CHANGE;before=",
+      "V1\t1792881179454\tADMIN\t-\tVertexBot\tAdmin.GameMode\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=gamemode survival VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=",
+      "V1\t1792881181257\tADMIN\t-\tVertexBot\tAdmin.GameMode\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=gamemode creative VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=",
+      "V1\t1792881181287\tADMIN\t7d0866f2-c3f1-39aa-b580-1df11642ddb4\tVertexBot\tAdmin.GameMode\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=CREATIVE;command=gamemode creative VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED;before=SURVIVAL",
+      "V1\t1792881186862\tADMIN\t-\tVertexBot\tAdmin.GameMode\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=gamemode survival VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=",
+      "V1\t1792881186887\tADMIN\t7d0866f2-c3f1-39aa-b580-1df11642ddb4\tVertexBot\tAdmin.GameMode\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=SURVIVAL;command=gamemode survival VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED;before=CREATIVE",
+      "V1\t1792881189587\tADMIN\t-\tVertexBot\tAdmin.GameMode\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=gamemode survival VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=NO_CHANGE;before=",
+      "V1\t1792881200869\tADMIN\t-\tVertexBot\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=op VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before=",
+      "V1\t1792881205587\tADMIN\t7d0866f2-c3f1-39aa-b580-1df11642ddb4\tVertexBot\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=true;command=op VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=CHANGED;before=false",
+      "V1\t1792881205697\tADMIN\t-\tVertexBot\tAdmin.Op\tADMIN\tINFO\t1\t0\tAdministrative state audit entry.\tseverity=INFO;after=;command=deop VertexBot;actorKind=CONSOLE;actor=CONSOLE;actorEstablished=true;outcome=ATTEMPT;before="
+    ]
+  },
+  "results": [
+    {
+      "name": "server-start",
+      "status": "pass",
+      "detail": "32s to reach Done"
+    },
+    {
+      "name": "rcon-connect",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "server-identifies-expected-version",
+      "status": "pass",
+      "detail": "This server is running CraftBukkit version 4632-Bukkit-690a402 (MC: 26.1.2) (Implementing API version 26.1.2-R0.1-SNAPSHOT)"
+    },
+    {
+      "name": "plugin-load",
+      "status": "pass",
+      "detail": "Enabling Vertex found in the log"
+    },
+    {
+      "name": "plugin-enable",
+      "status": "pass",
+      "detail": "startup banner printed"
+    },
+    {
+      "name": "no-load-errors",
+      "status": "pass",
+      "detail": "[]"
+    },
+    {
+      "name": "packet-listener-running",
+      "status": "pass",
+      "detail": "running | listener errors=0"
+    },
+    {
+      "name": "messaging-capability",
+      "status": "info",
+      "detail": "bukkit-legacy-text | hover=false | actionbar=false"
+    },
+    {
+      "name": "metrics-capability",
+      "status": "info",
+      "detail": "scheduler-derived | tps=unknown | mspt=unknown"
+    },
+    {
+      "name": "fallback-messenger-selected",
+      "status": "pass",
+      "detail": "expected bukkit-legacy-text; got bukkit-legacy-text | hover=false | actionbar=false"
+    },
+    {
+      "name": "checks-listed",
+      "status": "pass",
+      "detail": "12 lines mention active"
+    },
+    {
+      "name": "command-help",
+      "status": "pass",
+      "detail": "[Vertex] Comandos\n▸ /vertex alertas - liga/desliga seus alertas pessoais\n▸ /vertex inspecionar [jogador] - estado de det"
+    },
+    {
+      "name": "command-alias-vx",
+      "status": "pass",
+      "detail": "[Vertex] Comandos\n▸ /vertex alertas - liga/desliga seus alertas pessoais\n▸ /vertex inspecionar [jogador] - estado de det"
+    },
+    {
+      "name": "command-inspect-unknown-player",
+      "status": "pass",
+      "detail": "[Vertex] Jogador não encontrado: Nobody\n"
+    },
+    {
+      "name": "command-history",
+      "status": "pass",
+      "detail": "[Vertex] Histórico • * (0)\nNenhuma evidência registrada.\n"
+    },
+    {
+      "name": "command-alerts-console-refused",
+      "status": "pass",
+      "detail": "[Vertex] Este comando só pode ser usado por um jogador.\n"
+    },
+    {
+      "name": "command-unknown-sub",
+      "status": "pass",
+      "detail": "[Vertex] Subcomando desconhecido: nonsense. Use /vertex ajuda.\n"
+    },
+    {
+      "name": "helper-ran",
+      "status": "pass",
+      "detail": "['[22:32:21] [Server thread/INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED', '[22:32:25] [Server thread/INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE']"
+    },
+    {
+      "name": "aggregation-2x-single-message",
+      "status": "pass",
+      "detail": "1 message(s): ['[22:32:23] [Server thread/INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta']"
+    },
+    {
+      "name": "duplicate-observation-counted-once",
+      "status": "pass",
+      "detail": "1 message(s): ['[22:32:23] [Server thread/INFO]: [Vertex] [Vertex] SmokeSubject • ReachDistance • 1x • ⚠ Suspeita: média']"
+    },
+    {
+      "name": "alert-uses-identity-format",
+      "status": "pass",
+      "detail": "['[22:32:23] [Server thread/INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta']"
+    },
+    {
+      "name": "default-config-written",
+      "status": "pass",
+      "detail": "/home/runner/work/_temp/server/plugins/Vertex/config.yml"
+    },
+    {
+      "name": "reload-invalid-refused",
+      "status": "pass",
+      "detail": "[Vertex] Recarga recusada; a última configuração válida continua ativa.\n▸ alerts.aggregation-window-ms: must be between 200 and 60000\n"
+    },
+    {
+      "name": "reload-keeps-working-config",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "reload-valid-applied",
+      "status": "pass",
+      "detail": "[Vertex] Configuration reloaded successfully.\n"
+    },
+    {
+      "name": "language-switch-en_US",
+      "status": "pass",
+      "detail": "[Vertex] Commands\n▸ /vertex alerts - toggle your personal alerts\n▸ /vertex inspect [player] - detection and client state"
+    },
+    {
+      "name": "tick-rate-measured",
+      "status": "pass",
+      "detail": "scheduler-derived | tps=20.0 | mspt=50.0"
+    },
+    {
+      "name": "real-client-join",
+      "status": "pass",
+      "detail": "bot joined with client version 26.1.2"
+    },
+    {
+      "name": "permission-ordinary-player-denied-status",
+      "status": "pass",
+      "detail": "CHAT [Vertex] You do not have permission to use this command."
+    },
+    {
+      "name": "permission-survival-player-denied-alerts-toggle",
+      "status": "pass",
+      "detail": "CHAT [Vertex] You do not have permission to use this command."
+    },
+    {
+      "name": "creative-does-not-grant-commands",
+      "status": "pass",
+      "detail": "CHAT [Vertex] You do not have permission to use this command."
+    },
+    {
+      "name": "creative-can-toggle-own-alerts",
+      "status": "pass",
+      "detail": "CHAT [Vertex] Your personal alerts are now disabled."
+    },
+    {
+      "name": "creative-recipient-receives-alert",
+      "status": "pass",
+      "detail": "CHAT [Vertex] SmokeSubject1 • AutoClickerPattern • 2x • ⚠ Suspicion: high"
+    },
+    {
+      "name": "survival-non-operator-receives-nothing",
+      "status": "pass",
+      "detail": "no alert received"
+    },
+    {
+      "name": "operator-receives-alert-in-survival",
+      "status": "pass",
+      "detail": "CHAT [Vertex] SmokeSubject3 • AutoClickerPattern • 2x • ⚠ Suspicion: high"
+    },
+    {
+      "name": "operator-can-use-status",
+      "status": "pass",
+      "detail": "CHAT [Vertex] Vertex status"
+    },
+    {
+      "name": "real-packet-observed-by-listener",
+      "status": "pass",
+      "detail": "[22:33:25] [Server thread/INFO]: [Vertex] [Vertex] VertexBot • InvalidPacketField • 1x • ✖ Established contradiction: protocol"
+    },
+    {
+      "name": "clean-shutdown",
+      "status": "pass",
+      "detail": "exit code 0"
+    },
+    {
+      "name": "shutdown-message",
+      "status": "pass",
+      "detail": ""
+    },
+    {
+      "name": "no-vertex-stack-traces",
+      "status": "pass",
+      "detail": "[]"
+    },
+    {
+      "name": "evidence-persisted-with-accurate-total",
+      "status": "pass",
+      "detail": "25 record(s); counts=[2, 2, 2, 2]"
+    },
+    {
+      "name": "audit-op-attempts-recorded",
+      "status": "pass",
+      "detail": "2 attempt(s)"
+    },
+    {
+      "name": "audit-op-single-change-with-console-actor",
+      "status": "pass",
+      "detail": "[{'severity': 'INFO', 'after': 'true', 'command': 'op AuditTarget', 'actorKind': 'CONSOLE', 'actor': 'CONSOLE', 'actorEstablished': 'true', 'outcome': 'CHANGED', 'before': 'false'}]"
+    },
+    {
+      "name": "audit-repeated-op-is-no-change",
+      "status": "pass",
+      "detail": "1 no-change record(s)"
+    },
+    {
+      "name": "audit-rcon-command-visibility",
+      "status": "info",
+      "detail": "RCON op: 1 attempt(s) observed; change actor CONSOLE/established=true"
+    }
+  ],
+  "passed": 42,
+  "failed": 0,
+  "skipped": 0
+}

@@ -1,0 +1,165 @@
+Downloading mojang_26.1.2.jar
+Applying patches
+Starting org.bukkit.craftbukkit.Main
+2026-10-24T22:31:39.414832513Z ServerMain WARN Advanced terminal features are not available in this environment
+[22:31:39 INFO]: [bootstrap] Running Java 25 (OpenJDK 64-Bit Server VM 25.0.4.1+1-LTS; Eclipse Adoptium Temurin-25.0.4.1+1) on Linux 6.17.0-1022-azure (amd64)
+[22:31:39 INFO]: [bootstrap] Loading Paper 26.1.2-74-ver/26.1.2@e4e17fc (2026-07-06T16:51:09Z) for Minecraft 26.1.2
+[22:31:41 INFO]: [PluginInitializerManager] Initializing plugins...
+[22:31:41 INFO]: [PluginInitializerManager] Initialized 2 plugins
+[22:31:41 INFO]: [PluginInitializerManager] Bukkit plugins (2):
+ - Vertex (build-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23), VertexSmokeHelper (build-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23)
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.joml.MemUtil$MemUtilUnsafe (file:/home/runner/work/_temp/server/libraries/org/joml/joml/1.10.8/joml-1.10.8.jar)
+WARNING: Please consider reporting this to the maintainers of class org.joml.MemUtil$MemUtilUnsafe
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[22:31:45 WARN]: You have used the Paper command line EULA agreement flag.
+[22:31:45 WARN]: By using this setting you are indicating your agreement to Mojang's EULA (https://aka.ms/MinecraftEULA).
+[22:31:45 WARN]: If you do not agree to the above EULA please stop your server and remove this flag immediately.
+[22:31:45 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[22:31:46 INFO]: Found new data pack file/bukkit, loading it automatically
+[22:31:46 INFO]: Found new data pack paper, loading it automatically
+[22:31:46 INFO]: No existing world data, creating new world
+[22:31:48 INFO]: Loaded 1515 recipes
+[22:31:48 INFO]: Loaded 1617 advancements
+[22:31:48 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[22:31:48 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 352.0ms
+[22:31:48 INFO]: Starting minecraft server version 26.1.2
+[22:31:48 INFO]: Loading properties
+[22:31:48 INFO]: This server is running Paper version 26.1.2-74-ver/26.1.2@e4e17fc (2026-07-06T16:51:09Z) (Implementing API version 26.1.2.build.74-stable)
+[22:31:49 INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[22:31:49 INFO]: Server Ping Player Sample Count: 12
+[22:31:49 INFO]: Using 4 threads for Netty based IO
+[22:31:49 INFO]: [MoonriseCommon] Paper is using 1 worker threads, 1 I/O threads
+[22:31:49 INFO]: Default game type: SURVIVAL
+[22:31:49 INFO]: Generating keypair
+[22:31:49 INFO]: Starting Minecraft server on *:25565
+[22:31:49 INFO]: Paper: Using libdeflate (Linux x86_64) compression from Velocity.
+[22:31:49 INFO]: Paper: Using OpenSSL 3.x.x (Linux x86_64) cipher from Velocity.
+[22:31:49 INFO]: [Vertex] Loading server plugin Vertex vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:50 INFO]: [packetevents] Loading packetevents...
+[22:31:51 INFO]: [packetevents] Loading block mappings for V_26_3/23...
+[22:31:51 INFO]: [packetevents] Finished loading block mappings for V_26_3/23 in 280.695835ms
+[22:31:51 INFO]: [packetevents] Loaded packetevents v2.14.0 for Vertex
+[22:31:51 INFO]: [VertexSmokeHelper] Loading server plugin VertexSmokeHelper vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:51 WARN]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[22:31:51 WARN]: The server will make no attempt to authenticate usernames. Beware.
+[22:31:51 WARN]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[22:31:51 WARN]: To change this, set "online-mode" to "true" in the server.properties file.
+[22:31:51 INFO]: Preparing level "world"
+[22:31:52 INFO]: Selecting spawn point for level 'minecraft:overworld'...
+[22:31:54 INFO]: Selecting spawn point for level 'minecraft:the_nether'...
+[22:31:55 INFO]: Selecting spawn point for level 'minecraft:the_end'...
+[22:31:55 INFO]: Loading 0 persistent chunks for level 'minecraft:overworld'...
+[22:31:55 INFO]: Preparing spawn area: 100%
+[22:31:55 INFO]: Prepared spawn area in 3052 ms
+[22:31:55 INFO]: Loading 0 persistent chunks for level 'minecraft:the_nether'...
+[22:31:55 INFO]: Preparing spawn area: 100%
+[22:31:55 INFO]: Prepared spawn area in 1037 ms
+[22:31:55 INFO]: Loading 0 persistent chunks for level 'minecraft:the_end'...
+[22:31:55 INFO]: Preparing spawn area: 100%
+[22:31:55 INFO]: Prepared spawn area in 252 ms
+[22:31:55 INFO]: Done preparing level "world" (3.351s)
+[22:31:55 INFO]: [Vertex] Enabling Vertex vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:55 INFO]: Vertex em execução: observação, evidências e alertas privados. Nenhuma punição automática.
+[22:31:55 INFO]: Plataforma detectada: Paper (Minecraft 26.1.2, Java 25.0.4.1).
+[22:31:55 INFO]: Observação de pacotes: running.
+[22:31:55 INFO]: Mensagens ricas: paper-adventure.
+[22:31:55 INFO]: TPS/MSPT: server-api.
+[22:31:55 INFO]: [VertexSmokeHelper] Enabling VertexSmokeHelper vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:56 INFO]: [spark] Starting background profiler...
+[22:31:59 INFO]: Starting remote control listener
+[22:31:59 INFO]: Thread RCON Listener started
+[22:31:59 INFO]: RCON running on 0.0.0.0:25575
+[22:31:59 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[22:31:59 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[22:31:59 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[22:31:59 INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[22:31:59 INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[22:31:59 INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[22:31:59 INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[22:31:59 INFO]: Running delayed init tasks
+[22:31:59 INFO]: Done (26.664s)! For help, type "help"
+[22:31:59 INFO]: *************************************************************************************
+[22:31:59 INFO]: This is the first time you're starting this server.
+[22:31:59 INFO]: It's recommended you read our 'Getting Started' documentation for guidance.
+[22:31:59 INFO]: View this and more helpful information here: https://docs.papermc.io/paper/next-steps
+[22:31:59 INFO]: *************************************************************************************
+[22:31:59 INFO]: Thread RCON Client /127.0.0.1 started
+[22:31:59 WARN]: *************************************************************************************
+[22:31:59 WARN]: You are running the latest build for your Minecraft version (26.1.2)
+[22:31:59 WARN]: However, you are 4 release(s) behind the latest stable release (26.3)!
+[22:31:59 WARN]: It is recommended that you update as soon as possible
+[22:31:59 WARN]: https://papermc.io/downloads/paper
+[22:31:59 WARN]: *************************************************************************************
+[22:32:09 INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED
+[22:32:11 INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta
+[22:32:11 INFO]: [Vertex] [Vertex] SmokeSubject • ReachDistance • 1x • ⚠ Suspeita: média
+[22:32:13 INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE
+[22:32:21 INFO]: Made AuditTarget a server operator
+[22:32:29 INFO]: Nothing changed. The player already is an operator
+[22:32:44 INFO]: UUID of player VertexBot is 7d0866f2-c3f1-39aa-b580-1df11642ddb4
+[22:32:47 INFO]: VertexBot joined the game
+[22:32:47 INFO]: VertexBot[/127.0.0.1:39686] logged in with entity id 3 at ([minecraft:overworld]166.5, 70.0, 170.5)
+[22:32:47 INFO]: [Vertex] [Vertex] ℹ Client information • VertexBot (7d0866f2-c3f1-39aa-b580-1df11642ddb4)
+[22:32:47 INFO]: [Vertex] ▸ Brand: vanilla [reported]
+[22:32:47 INFO]: [Vertex] ▸ Protocol: 775 [reported]
+[22:32:47 INFO]: [Vertex] ▸ Version: 26.1 [inferred]
+[22:32:47 INFO]: [Vertex] ▸ Injection: not verifiable from server-side data
+[22:32:47 INFO]: [Vertex] Client data is untrusted. A modified client or a "vanilla" brand proves nothing by itself.
+[22:32:52 INFO]: VertexBot issued server command: /vertex status
+[22:32:52 INFO]: VertexBot issued server command: /vertex alerts
+[22:32:54 INFO]: VertexBot issued server command: /vertex history
+[22:32:55 INFO]: VertexBot issued server command: /vertex alerts
+[22:32:55 INFO]: VertexBot issued server command: /vertex alerts
+[22:32:56 INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED
+[22:32:58 INFO]: [Vertex] [Vertex] SmokeSubject1 • AutoClickerPattern • 2x • ⚠ Suspicion: high
+[22:32:58 INFO]: [Vertex] [Vertex] SmokeSubject1 • ReachDistance • 1x • ⚠ Suspicion: medium
+[22:33:00 INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE
+[22:33:00 INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED
+[22:33:02 INFO]: [Vertex] [Vertex] SmokeSubject2 • AutoClickerPattern • 2x • ⚠ Suspicion: high
+[22:33:02 INFO]: [Vertex] [Vertex] SmokeSubject2 • ReachDistance • 1x • ⚠ Suspicion: medium
+[22:33:04 INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE
+[22:33:14 INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED
+[22:33:16 INFO]: [Vertex] [Vertex] SmokeSubject3 • AutoClickerPattern • 2x • ⚠ Suspicion: high
+[22:33:16 INFO]: [Vertex] [Vertex] SmokeSubject3 • ReachDistance • 1x • ⚠ Suspicion: medium
+[22:33:16 INFO]: VertexBot issued server command: /vertex status
+[22:33:17 WARN]: VertexBot tried to set an invalid carried item
+[22:33:17 INFO]: VertexBot lost connection: Invalid hotbar selection (Hacking?)
+[22:33:17 INFO]: [Vertex] [Vertex] VertexBot • InvalidPacketField • 1x • ✖ Established contradiction: protocol
+[22:33:17 INFO]: VertexBot left the game
+[22:33:18 INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE
+[22:33:19 INFO]: Stopping server
+[22:33:19 INFO]: [VertexSmokeHelper] Disabling VertexSmokeHelper vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:33:19 INFO]: [Vertex] Disabling Vertex vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:33:20 INFO]: [Vertex] Vertex stopped.
+[22:33:20 INFO]: Saving players
+[22:33:20 INFO]: Saving worlds
+[22:33:20 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[22:33:20 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:overworld'
+[22:33:20 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:overworld'
+[22:33:20 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:overworld'
+[22:33:20 INFO]: [ChunkHolderManager] Saved 1089 block chunks, 121 entity chunks, 0 poi chunks in world 'minecraft:overworld' in 0.60s
+[22:33:20 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:overworld'
+[22:33:20 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:overworld'
+[22:33:20 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[22:33:20 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:the_nether'
+[22:33:20 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:the_nether'
+[22:33:20 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:the_nether'
+[22:33:20 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'minecraft:the_nether' in 0.00s
+[22:33:20 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:the_nether'
+[22:33:20 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:the_nether'
+[22:33:20 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[22:33:20 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:the_end'
+[22:33:20 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:the_end'
+[22:33:20 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:the_end'
+[22:33:20 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'minecraft:the_end' in 0.00s
+[22:33:20 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:the_end'
+[22:33:20 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:the_end'
+[22:33:20 INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[22:33:20 INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[22:33:20 INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[22:33:20 INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[22:33:20 INFO]: Waiting for all RegionFile I/O tasks to complete...
+[22:33:20 INFO]: All RegionFile I/O tasks to complete
+[22:33:20 INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[22:33:20 INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...

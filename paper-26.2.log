@@ -1,0 +1,133 @@
+Downloading mojang_26.2.jar
+Applying patches
+Starting org.bukkit.craftbukkit.Main
+2026-10-24T22:31:14.977260726Z ServerMain WARN Advanced terminal features are not available in this environment
+[22:31:15 INFO]: [bootstrap] Running Java 25 (OpenJDK 64-Bit Server VM 25.0.4.1+1-LTS; Eclipse Adoptium Temurin-25.0.4.1+1) on Linux 6.17.0-1022-azure (amd64)
+[22:31:15 INFO]: [bootstrap] Loading Paper 26.2-134-ver/26.2@3e24be0 (2026-10-14T18:33:55Z) for Minecraft 26.2
+[22:31:15 INFO]: [PluginInitializerManager] Initializing plugins...
+[22:31:15 INFO]: [PluginInitializerManager] Initialized 2 plugins
+[22:31:15 INFO]: [PluginInitializerManager] Bukkit plugins (2):
+ - Vertex (build-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23), VertexSmokeHelper (build-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23)
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.joml.MemUtil$MemUtilUnsafe (file:/home/runner/work/_temp/server/libraries/org/joml/joml/1.10.8/joml-1.10.8.jar)
+WARNING: Please consider reporting this to the maintainers of class org.joml.MemUtil$MemUtilUnsafe
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[22:31:17 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[22:31:18 WARN]: You have used the Paper command line EULA agreement flag.
+[22:31:18 WARN]: By using this setting you are indicating your agreement to Mojang's EULA (https://aka.ms/MinecraftEULA).
+[22:31:18 WARN]: If you do not agree to the above EULA please stop your server and remove this flag immediately.
+[22:31:18 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[22:31:18 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 480.0ms
+[22:31:18 INFO]: Found new data pack paper, loading it automatically
+[22:31:19 INFO]: No existing world data, creating new world
+[22:31:19 INFO]: Loaded 1585 recipes
+[22:31:19 INFO]: Loaded 1688 advancements
+[22:31:20 INFO]: Starting minecraft server version 26.2
+[22:31:20 INFO]: Loading properties
+[22:31:20 INFO]: This server is running Paper version 26.2-134-ver/26.2@3e24be0 (2026-10-14T18:33:55Z) (Implementing API version 26.2.build.134-stable)
+[22:31:20 INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[22:31:20 INFO]: Server Ping Player Sample Count: 12
+[22:31:20 INFO]: Using 4 threads for Netty based IO
+[22:31:20 INFO]: [MoonriseCommon] Paper is using 1 worker threads, 1 I/O threads
+[22:31:20 INFO]: Default game type: SURVIVAL
+[22:31:20 INFO]: Generating keypair
+[22:31:20 INFO]: Starting Minecraft server on *:25565
+[22:31:20 INFO]: Paper: Using libdeflate (Linux x86_64) compression from Velocity.
+[22:31:20 INFO]: Paper: Using OpenSSL 3.x.x (Linux x86_64) cipher from Velocity.
+[22:31:20 INFO]: [Vertex] Loading server plugin Vertex vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:21 INFO]: [packetevents] Loading packetevents...
+[22:31:22 INFO]: [packetevents] Loading block mappings for V_26_3/23...
+[22:31:22 INFO]: [packetevents] Finished loading block mappings for V_26_3/23 in 229.819346ms
+[22:31:22 INFO]: [packetevents] Loaded packetevents v2.14.0 for Vertex
+[22:31:22 INFO]: [VertexSmokeHelper] Loading server plugin VertexSmokeHelper vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:22 WARN]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[22:31:22 WARN]: The server will make no attempt to authenticate usernames. Beware.
+[22:31:22 WARN]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[22:31:22 WARN]: To change this, set "online-mode" to "true" in the server.properties file.
+[22:31:22 INFO]: Preparing level "world"
+[22:31:22 INFO]: Selecting spawn point for level 'minecraft:overworld'...
+[22:31:24 INFO]: Selecting spawn point for level 'minecraft:the_nether'...
+[22:31:25 INFO]: Selecting spawn point for level 'minecraft:the_end'...
+[22:31:25 INFO]: Loading 0 persistent chunks for level 'minecraft:overworld'...
+[22:31:25 INFO]: Preparing spawn area: 100%
+[22:31:25 INFO]: Prepared spawn area in 2571 ms
+[22:31:25 INFO]: Loading 0 persistent chunks for level 'minecraft:the_nether'...
+[22:31:25 INFO]: Preparing spawn area: 100%
+[22:31:25 INFO]: Prepared spawn area in 829 ms
+[22:31:25 INFO]: Loading 0 persistent chunks for level 'minecraft:the_end'...
+[22:31:25 INFO]: Preparing spawn area: 100%
+[22:31:25 INFO]: Prepared spawn area in 209 ms
+[22:31:25 INFO]: Done preparing level "world" (2.938s)
+[22:31:25 INFO]: [Vertex] Enabling Vertex vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:25 INFO]: Vertex em execução: observação, evidências e alertas privados. Nenhuma punição automática.
+[22:31:25 INFO]: Plataforma detectada: Paper (Minecraft 26.2, Java 25.0.4.1).
+[22:31:25 INFO]: Observação de pacotes: running.
+[22:31:25 INFO]: Mensagens ricas: paper-adventure.
+[22:31:25 INFO]: TPS/MSPT: server-api.
+[22:31:25 INFO]: [VertexSmokeHelper] Enabling VertexSmokeHelper vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:31:26 INFO]: [spark] Starting background profiler...
+[22:31:27 INFO]: Starting remote control listener
+[22:31:27 INFO]: Thread RCON Listener started
+[22:31:27 INFO]: RCON running on 0.0.0.0:25575
+[22:31:27 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[22:31:27 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[22:31:27 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[22:31:27 INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[22:31:27 INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[22:31:27 INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[22:31:27 INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[22:31:27 INFO]: Running delayed init tasks
+[22:31:27 INFO]: Done (13.905s)! For help, type "help"
+[22:31:27 INFO]: *************************************************************************************
+[22:31:27 INFO]: This is the first time you're starting this server.
+[22:31:27 INFO]: It's recommended you read our 'Getting Started' documentation for guidance.
+[22:31:27 INFO]: View this and more helpful information here: https://docs.papermc.io/paper/next-steps
+[22:31:27 INFO]: *************************************************************************************
+[22:31:27 INFO]: Thread RCON Client /127.0.0.1 started
+[22:31:27 WARN]: *************************************************************************************
+[22:31:27 WARN]: You are running the latest build for your Minecraft version (26.2)
+[22:31:27 WARN]: However, you are 2 releases behind the latest stable release (26.3)!
+[22:31:27 WARN]: It is recommended that you update as soon as possible
+[22:31:27 WARN]: https://papermc.io/downloads/paper
+[22:31:27 WARN]: *************************************************************************************
+[22:31:37 INFO]: [VertexSmokeHelper] SMOKE_HELPER_SUBMITTED
+[22:31:39 INFO]: [Vertex] [Vertex] SmokeSubject • AutoClickerPattern • 2x • ⚠ Suspeita: alta
+[22:31:39 INFO]: [Vertex] [Vertex] SmokeSubject • ReachDistance • 1x • ⚠ Suspeita: média
+[22:31:41 INFO]: [VertexSmokeHelper] SMOKE_HELPER_DONE
+[22:31:49 INFO]: Made AuditTarget a server operator
+[22:31:57 INFO]: Nothing changed. The player already is an operator
+[22:32:11 INFO]: Stopping server
+[22:32:11 INFO]: [VertexSmokeHelper] Disabling VertexSmokeHelper vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:32:11 INFO]: [Vertex] Disabling Vertex vbuild-06bdc6eca3e7b5afe69da97024bd6a0ac3b65b23
+[22:32:11 INFO]: [Vertex] Vertex stopped.
+[22:32:11 INFO]: Saving players
+[22:32:11 INFO]: Saving worlds
+[22:32:11 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[22:32:11 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:overworld'
+[22:32:11 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:overworld'
+[22:32:11 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:overworld'
+[22:32:11 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'minecraft:overworld' in 0.00s
+[22:32:11 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:overworld'
+[22:32:11 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:overworld'
+[22:32:11 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[22:32:11 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:the_nether'
+[22:32:11 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:the_nether'
+[22:32:11 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:the_nether'
+[22:32:11 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'minecraft:the_nether' in 0.00s
+[22:32:11 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:the_nether'
+[22:32:11 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:the_nether'
+[22:32:11 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[22:32:11 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'minecraft:the_end'
+[22:32:11 INFO]: [ChunkHolderManager] Halted chunk system for world 'minecraft:the_end'
+[22:32:11 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'minecraft:the_end'
+[22:32:11 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'minecraft:the_end' in 0.00s
+[22:32:11 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'minecraft:the_end'
+[22:32:11 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'minecraft:the_end'
+[22:32:11 INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[22:32:11 INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[22:32:11 INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[22:32:11 INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[22:32:11 INFO]: Waiting for all RegionFile I/O tasks to complete...
+[22:32:11 INFO]: All RegionFile I/O tasks to complete
+[22:32:11 INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[22:32:11 INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...
