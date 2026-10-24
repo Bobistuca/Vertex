@@ -1,0 +1,24 @@
+name: Probe
+on:
+  push:
+    branches: [ "claude/vertex-minecraft-anticheat-5ldbyr" ]
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query published artifacts and server builds
+        run: |
+          set +e
+          show() { echo "::group::$1"; curl -sSL -m 60 "$1" | head -c "${2:-3000}"; echo; echo "::endgroup::"; }
+          show https://repo.codemc.io/repository/maven-releases/com/github/retrooper/packetevents-spigot/maven-metadata.xml
+          show https://repo.papermc.io/repository/maven-public/io/papermc/paper/paper-api/maven-metadata.xml 6000
+          show https://hub.spigotmc.org/nexus/content/repositories/snapshots/org/spigotmc/spigot-api/maven-metadata.xml 6000
+          show https://repo.maven.apache.org/maven2/net/kyori/adventure-text-minimessage/maven-metadata.xml 1500
+          show https://fill.papermc.io/v3/projects/paper 4000
+          show https://hub.spigotmc.org/versions/ 3000
+          show https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/api/json?tree=number 300
+          for v in 26.1 26.1.1 26.1.2 26.2 26.3; do show https://hub.spigotmc.org/versions/$v.json 600; done
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '25' }
+      - run: java -version
