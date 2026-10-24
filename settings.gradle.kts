@@ -9,4 +9,4 @@ pluginManagement {
 
 rootProject.name = "Vertex"
 
-include("core", "paper", "plugin")
+include("core", "paper", "plugin", "smoke:helper")

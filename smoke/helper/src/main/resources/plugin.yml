@@ -1,0 +1,10 @@
+name: VertexSmokeHelper
+main: io.github.bobistuca.vertex.smoke.SmokeHelper
+version: ${version}
+api-version: '26.1'
+description: Test-only helper for the Vertex CI smoke tests (not shipped).
+author: Bobistuca
+softdepend: [Vertex]
+commands:
+  smoke:
+    description: Re-runs the smoke scenario (CI only)

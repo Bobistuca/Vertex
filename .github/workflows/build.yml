@@ -34,8 +34,33 @@ jobs:
           echo "--- top-level packages"; unzip -Z1 "$JAR" | awk -F/ 'NF>2{print $1"/"$2"/"$3"/"$4}' | sort | uniq -c | sort -rn | head -30
           echo "--- unrelocated third-party classes (must be none)"
           if unzip -Z1 "$JAR" | grep -E '^(net/kyori|com/github/retrooper|io/github/retrooper|org/yaml)/' ; then exit 1; fi
-          echo "--- service descriptors"; unzip -Z1 "$JAR" | grep META-INF/services || true
+          echo "--- META-INF entries (excluding maven metadata and multi-release classes)"
+          unzip -Z1 "$JAR" | grep '^META-INF/' | grep -vE '^META-INF/(maven|versions)/' | head -40 || true
           echo "--- bundled resources"; unzip -Z1 "$JAR" | grep -E '^(config.yml|lang/|assets/mappings/)' | head -8
+
+      - name: Exercise the shaded jar (relocated Adventure/MiniMessage and SnakeYAML)
+        run: |
+          set -e
+          mkdir -p selftest && cat > selftest/ShadedSelfTest.java <<'JAVA'
+          import io.github.bobistuca.vertex.core.config.Settings;
+          import io.github.bobistuca.vertex.core.config.SettingsLoader;
+          import io.github.bobistuca.vertex.core.i18n.Rich;
+          import io.github.bobistuca.vertex.core.i18n.RichRenderer;
+          import java.util.Map;
+
+          public class ShadedSelfTest {
+              public static void main(String[] args) {
+                  Settings s = SettingsLoader.defaults();
+                  Rich r = new RichRenderer(s.appearance()).render(
+                          "<primary><bold>[Vertex]</bold></primary> <text><name></text>", Map.of("name", "<red>Evil"));
+                  String plain = r.toPlainText();
+                  if (!plain.equals("[Vertex] <red>Evil")) throw new IllegalStateException("unexpected: " + plain);
+                  System.out.println("shaded jar renders: " + plain);
+              }
+          }
+          JAVA
+          javac -cp plugin/build/libs/Vertex.jar -d selftest selftest/ShadedSelfTest.java
+          java -cp plugin/build/libs/Vertex.jar:selftest ShadedSelfTest
 
       - name: Upload Vertex.jar
         uses: actions/upload-artifact@v4
