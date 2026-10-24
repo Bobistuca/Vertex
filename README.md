@@ -52,14 +52,34 @@ Target: Minecraft Java Edition **26.1 through 26.3**, on **CraftBukkit**, **Spig
 Verified facts (see [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for sources and the exact tested builds):
 
 - PacketEvents **2.14.0** declares support for 26.1 through 26.3 (2.12.0: 26.1/26.1.1, 2.12.1: 26.1.2,
-  2.13.0: 26.2, 2.14.0: 26.3) and runs on Spigot-API servers. CraftBukkit is **not** named in its release notes,
-  so Vertex reports the packet library state at startup and in `/vertex status`.
+  2.13.0: 26.2, 2.14.0: 26.3). Its release notes name Spigot but not CraftBukkit, so CraftBukkit was verified at
+  runtime instead of assumed: the embedded library loads, initializes and observes packets on the CraftBukkit
+  builds in the matrix below.
 - API baseline: `spigot-api 26.1-R0.1-SNAPSHOT` (the oldest target); `plugin.yml` uses `api-version: '26.1'`.
   Paper-only code lives in a separate adapter that is loaded reflectively and only when Paper is detected.
+- Rich messages depend on the server: Paper uses native Adventure, Spigot uses BungeeCord chat components (hover
+  details and action bar), and CraftBukkit has neither, so Vertex falls back to colored legacy text without hover or
+  action bar and states this in `/vertex status`.
 - If the packet library cannot start on a server, Vertex keeps running, disables the packet-driven checks, says so in
   the log and in `/vertex status`, and never advertises them as active.
 
-COMPATIBILITY_MATRIX_PLACEHOLDER
+| Server | 26.1 | 26.2 | 26.3 |
+|---|---|---|---|
+| CraftBukkit | verified on 26.1.2 — BuildTools 201; Spigot build 4632; live client packets observed | verified on 26.2 — BuildTools 201; Spigot build 4648 | verified on 26.3 — BuildTools 201; Spigot build 4663 |
+| Spigot | verified on 26.1.2 — BuildTools 201; Spigot build 4632; live client packets observed | verified on 26.2 — BuildTools 201; Spigot build 4648 | verified on 26.3 — BuildTools 201; Spigot build 4663 |
+| Paper | verified on 26.1.2 — Paper 74 (STABLE); live client packets observed | verified on 26.2 — Paper 134 (STABLE) | verified on 26.3 — Paper 222 (STABLE) |
+
+*verified* = the startup and functionality smoke test passed on that exact server build (Temurin Java 
+25.0.4 on the Linux CI runner): plugin load, packet-listener initialization, commands, localized messages, 
+aggregation, safe reload, administrative auditing, evidence persistence and clean shutdown. Minecraft 26.1 
+was tested with the 26.1.2 builds; 26.1 and 26.1.1 share the same Spigot/CraftBukkit build but were not 
+tested separately, and Paper 26.1/26.1.1 were not tested. Any combination or patch not listed is 
+**unverified**. A real protocol client (permissions, alert recipients, a malformed packet reaching the 
+listener) was only available for 26.1.2; on 26.2 and 26.3 the packet listener is verified to initialize 
+and run, but no client traffic was observed. Not covered by the smoke tests: the live action-bar counter, 
+alert sounds, tab completion, the LuckPerms integration and non-Linux hosts.
+
+Exact builds, the reported server version strings and every check are recorded in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## What Vertex checks
 

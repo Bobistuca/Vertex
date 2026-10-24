@@ -29,7 +29,9 @@ def cell(d):
     short = re.sub(r" sha256=\w+", "", sid)
     if d["failed"]:
         return f"**FAILED** {d['failed']} check(s) — {short}"
-    return f"verified — {short}"
+    packets = next((r for r in d["results"] if r["name"] == "real-packet-observed-by-listener"), None)
+    live = "; live client packets observed" if packets and packets["status"] == "pass" else ""
+    return f"verified on {d['info']['version']} — {short}{live}"
 
 
 def main():
@@ -41,13 +43,15 @@ def main():
         lines.append(f"| {label} | " + " | ".join(cells) + " |")
     note = [
         "",
-        "*verified* = the startup and functionality smoke test passed on that exact server build (Java 25.0.4, the ",
-        "Linux CI runner): plugin load, packet-listener initialization, commands, localized messages, aggregation, ",
-        "safe reload, administrative auditing, evidence persistence and clean shutdown. Minecraft 26.1 was tested ",
-        "with the 26.1.2 builds; 26.1 and 26.1.1 share the same Spigot/CraftBukkit build but were not tested ",
-        "separately. Any combination or patch not listed is **unverified**. Live packets from a real client were only ",
-        "exercised on 26.1.2 (no public protocol test client supports 26.2/26.3 yet); on 26.2/26.3 the listener is ",
-        "verified to initialize and run, but no client traffic was observed.",
+        "*verified* = the startup and functionality smoke test passed on that exact server build (Temurin Java ",
+        "25.0.4 on the Linux CI runner): plugin load, packet-listener initialization, commands, localized messages, ",
+        "aggregation, safe reload, administrative auditing, evidence persistence and clean shutdown. Minecraft 26.1 ",
+        "was tested with the 26.1.2 builds; 26.1 and 26.1.1 share the same Spigot/CraftBukkit build but were not ",
+        "tested separately, and Paper 26.1/26.1.1 were not tested. Any combination or patch not listed is ",
+        "**unverified**. A real protocol client (permissions, alert recipients, a malformed packet reaching the ",
+        "listener) was only available for 26.1.2; on 26.2 and 26.3 the packet listener is verified to initialize ",
+        "and run, but no client traffic was observed. Not covered by the smoke tests: the live action-bar counter, ",
+        "alert sounds, tab completion, the LuckPerms integration and non-Linux hosts.",
     ]
     open(readme_out, "w").write("\n".join(lines + note) + "\n")
 
