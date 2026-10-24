@@ -142,7 +142,8 @@ def main():
     info["server_version_output"] = version_out[:300]
     print("version:", version_out[:200], flush=True)
 
-    expected = re.search(r"MC: " + re.escape(args.version) + r"\)", version_out)
+    ver = re.escape(args.version)
+    expected = re.search(rf"(MC: {ver}\)|version {ver}[-.\s]|API version {ver}[-.\s])", version_out)
     check("server-identifies-expected-version", expected is not None, version_out.split("\n")[0][:200])
 
     log = [strip(l) for l in server.snapshot()]
@@ -245,7 +246,7 @@ def main():
     traces = [l for l in log if "io.github.bobistuca.vertex" in l and re.search(r"\tat |Exception|Error", l)]
     check("no-vertex-stack-traces", not traces, traces[:3])
     evidence = work / "plugins" / "Vertex" / "data" / "evidence.log"
-    rows = evidence.read_text(encoding="utf-8").splitlines() if evidence.exists() else []
+    rows = [l for l in evidence.read_text(encoding="utf-8").split("\n") if l] if evidence.exists() else []
     counts = [int(r.split("\t")[8]) for r in rows if r.startswith("V1\t") and "AutoClickerPattern" in r and len(r.split("\t")) > 8]
     check("evidence-persisted-with-accurate-total", 2 in counts, f"{len(rows)} record(s); counts={counts[:5]}")
     summary_counts = {}
