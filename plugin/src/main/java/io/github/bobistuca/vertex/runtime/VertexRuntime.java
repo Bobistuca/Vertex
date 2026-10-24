@@ -264,7 +264,8 @@ public final class VertexRuntime {
     public void playerLeft(Player player) {
         UUID id = player.getUniqueId();
         analysis.submit(new Observation.Quit(id, player.getName(), System.nanoTime()));
-        pipeline.clearPlayer(id);
+        // A player who leaves right after an incident (for example a kick) must still be reported.
+        pipeline.clearPlayer(id).forEach(dispatcher::deliver);
         pipeline.forgetRecipient(id);
         tracker.remove(id);
         clientInfo.remove(id);

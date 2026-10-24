@@ -126,6 +126,9 @@ def main():
     info["server_version_output"] = version_out[:300]
     print("version:", version_out[:200], flush=True)
 
+    expected = re.search(r"MC: " + re.escape(args.version) + r"\)", version_out)
+    check("server-identifies-expected-version", expected is not None, version_out.split("\n")[0][:200])
+
     log = [strip(l) for l in server.snapshot()]
     joined = "\n".join(log)
     loaded = re.search(r"Enabling Vertex", joined) is not None
@@ -143,6 +146,13 @@ def main():
     check("messaging-capability", bool(mm), mm.group(1) if mm else "missing", status="info")
     tm = re.search(r"(?:Métricas do servidor|Server metrics): ([^\n]+)", status)
     check("metrics-capability", bool(tm), tm.group(1) if tm else "missing", status="info")
+    if args.impl == "paper":
+        check("paper-native-adventure-selected", bool(mm) and mm.group(1).startswith("paper-adventure"),
+              mm.group(1) if mm else "missing")
+    else:
+        expect = "bukkit-legacy-text" if args.impl == "craftbukkit" else "spigot-bungee-chat"
+        check("fallback-messenger-selected", bool(mm) and mm.group(1).startswith(expect),
+              f"expected {expect}; got {mm.group(1) if mm else 'missing'}")
     active = len(re.findall(r"ativa |active ", status))
     check("checks-listed", "AutoClickerPattern" in status and "ReachDistance" in status, f"{active} lines mention active")
 
@@ -185,6 +195,18 @@ def main():
     out = run("vertex help")
     check("language-switch-en_US", "Commands" in out, out[:120])
 
+    # --- administrative auditing on the real server (console / RCON commands) ---
+    run("op AuditTarget")
+    time.sleep(8)          # operator reconciliation runs every op-interval-ticks (100 ticks)
+    run("op AuditTarget")  # repeated operation: must not become a second escalation
+    time.sleep(14)         # long enough for the correlation window to expire (no-change classification)
+    status2 = run("vertex status")
+    tps = re.search(r"TPS|tps=([0-9.]+)", status2)
+    metrics2 = re.search(r"(?:Métricas do servidor|Server metrics): ([^\n]+)", status2)
+    check("tick-rate-measured", bool(metrics2) and re.search(r"tps=[0-9]", metrics2.group(1)) is not None,
+          metrics2.group(1) if metrics2 else "missing")
+    del tps
+
     # --- optional real client (26.1.x only) ---
     if args.bot_version:
         bot_checks(args, server, run, results, check)
@@ -208,6 +230,20 @@ def main():
     rows = evidence.read_text(encoding="utf-8").splitlines() if evidence.exists() else []
     counts = [int(r.split("\t")[8]) for r in rows if r.startswith("V1\t") and "AutoClickerPattern" in r and len(r.split("\t")) > 8]
     check("evidence-persisted-with-accurate-total", 2 in counts, f"{len(rows)} record(s); counts={counts[:5]}")
+    admin = [r.split("\t") for r in rows if r.startswith("V1\t") and "\tADMIN\t" in r and "AuditTarget" in r]
+    def data_of(fields):
+        pairs = fields[11].split("\x1f") if len(fields) > 11 and fields[11] else []
+        return dict(p.split("\x1e", 1) for p in pairs if "\x1e" in p)
+    entries = [data_of(f) for f in admin]
+    changed = [d for d in entries if d.get("outcome") == "CHANGED"]
+    nochange = [d for d in entries if d.get("outcome") == "NO_CHANGE"]
+    attempts = [d for d in entries if d.get("outcome") == "ATTEMPT"]
+    check("audit-op-attempts-recorded", len(attempts) >= 2, f"{len(attempts)} attempt(s)")
+    check("audit-op-single-change-with-console-actor",
+          len(changed) == 1 and changed[0].get("actorKind") == "CONSOLE" and changed[0].get("actorEstablished") == "true"
+          and changed[0].get("before") == "false" and changed[0].get("after") == "true",
+          changed[:1] or "no CHANGED record")
+    check("audit-repeated-op-is-no-change", len(nochange) >= 1 and len(changed) == 1, f"{len(nochange)} no-change record(s)")
     finish(results, info, args, server, rows, work)
 
 

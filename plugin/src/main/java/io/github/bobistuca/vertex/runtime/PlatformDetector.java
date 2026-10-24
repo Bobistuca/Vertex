@@ -84,7 +84,13 @@ public final class PlatformDetector {
             messenger = new LegacyMessenger();
         }
         return new Detected(caps, new PlatformAdapters(platform, messenger, metrics, brand), serverName,
-                Bukkit.getVersion(), Bukkit.getBukkitVersion());
+                Bukkit.getVersion(), minecraftVersion());
+    }
+
+    /** The Minecraft version, parsed from the server version string ("... (MC: 26.2)"), else the API version. */
+    private static String minecraftVersion() {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(MC: ([^)]+)\\)").matcher(String.valueOf(Bukkit.getVersion()));
+        return m.find() ? m.group(1) : String.valueOf(Bukkit.getBukkitVersion());
     }
 
     private boolean classExists(String name) {

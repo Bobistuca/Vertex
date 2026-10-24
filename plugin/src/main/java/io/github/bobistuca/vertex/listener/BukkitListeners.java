@@ -28,6 +28,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerVelocityEvent;
+import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.util.BoundingBox;
 
@@ -136,6 +137,18 @@ public final class BukkitListeners implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onServerCommand(ServerCommandEvent e) {
+        if (e instanceof RemoteServerCommandEvent) {
+            return; // handled by onRemoteCommand, so it is never counted twice
+        }
+        recordConsoleCommand(e);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRemoteCommand(RemoteServerCommandEvent e) {
+        recordConsoleCommand(e);
+    }
+
+    private void recordConsoleCommand(ServerCommandEvent e) {
         CommandSender sender = e.getSender();
         Actor actor;
         if (sender instanceof Player p) {
