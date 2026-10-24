@@ -220,7 +220,8 @@ def main():
     status2 = run("vertex status")
     tps = re.search(r"TPS|tps=([0-9.]+)", status2)
     metrics2 = re.search(r"(?:Métricas do servidor|Server metrics): ([^\n]+)", status2)
-    check("tick-rate-measured", bool(metrics2) and re.search(r"tps=[0-9]", metrics2.group(1)) is not None,
+    tps_value = re.search(r"tps=([0-9.]+)", metrics2.group(1)) if metrics2 else None
+    check("tick-rate-measured", bool(tps_value) and 12.0 <= float(tps_value.group(1)) <= 20.5,
           metrics2.group(1) if metrics2 else "missing")
     del tps
 
