@@ -17,6 +17,14 @@ import org.bukkit.entity.Player;
 public final class PlatformDetector {
     private static final String PAPER_ADAPTERS = "io.github.bobistuca.vertex.paper.PaperAdapters";
 
+    /**
+     * Builds a dotted name from parts. The names of server-provided Adventure classes must not appear as string
+     * constants, because shading would rewrite them to Vertex's relocated copy of the library.
+     */
+    private static String name(String... parts) {
+        return String.join(".", parts);
+    }
+
     private final ClassLoader loader;
     private final Logger logger;
 
@@ -30,7 +38,7 @@ public final class PlatformDetector {
                            String serverVersion, String minecraftVersion) { }
 
     public Detected detect(TickRateMonitor fallbackMetrics, boolean packetObservation) {
-        boolean nativeAdventure = isAssignable("net.kyori.adventure.audience.Audience", Player.class);
+        boolean nativeAdventure = isAssignable(name("net", "kyori", "adventure", "audience", "Audience"), Player.class);
         String serverName = Bukkit.getName();
         boolean paperNamed = serverName != null && serverName.toLowerCase().contains("paper");
         boolean paper = nativeAdventure && (paperNamed || classExists("io.papermc.paper.ServerBuildInfo")
@@ -51,7 +59,8 @@ public final class PlatformDetector {
 
         if (caps.messaging() == Capabilities.Messaging.PAPER_NATIVE) {
             try {
-                Class<?> type = Class.forName(PAPER_ADAPTERS, true, loader);
+                Class<?> type = Class.forName(PAPER_ADAPTERS, true,
+                        new EmbeddedClassLoader(loader, "paper", "io.github.bobistuca.vertex.paper."));
                 PlatformAdapters paperAdapters = (PlatformAdapters) type.getMethod("create").invoke(null);
                 messenger = paperAdapters.messenger();
                 if (serverTps) {

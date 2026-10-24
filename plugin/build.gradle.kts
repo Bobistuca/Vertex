@@ -24,14 +24,30 @@ dependencies {
 
     implementation(project(":core"))
     implementation("com.github.retrooper:packetevents-spigot:$packetEventsVersion")
-    runtimeOnly(project(":paper"))
 
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+// The Paper adapter needs the server's native Adventure classes, so it must not go through the relocation that
+// shading applies to net.kyori. Its compiled classes are embedded as ".class.bin" resources (which shading leaves
+// untouched) and loaded on demand by EmbeddedClassLoader, only when Paper is detected at runtime.
+val embeddedRoot = layout.buildDirectory.dir("generated/embedded-resources")
+val embedPaperAdapter = tasks.register<Copy>("embedPaperAdapter") {
+    val paperJar = project(":paper").tasks.named<Jar>("jar")
+    dependsOn(paperJar)
+    from(paperJar.flatMap { it.archiveFile }.map { zipTree(it) })
+    include("io/github/bobistuca/vertex/paper/**/*.class")
+    rename { "$it.bin" }
+    into(embeddedRoot.map { it.dir("embedded/paper") })
+}
+sourceSets.main {
+    resources.srcDir(embeddedRoot)
+}
+
 tasks.processResources {
+    dependsOn(embedPaperAdapter)
     val buildId = project.version.toString()
     inputs.property("buildId", buildId)
     filesMatching("plugin.yml") {

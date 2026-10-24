@@ -77,7 +77,7 @@ public final class VertexRuntime {
     private LuckPermsBridge luckPerms;
     private BukkitTask snapshotTask;
     private BukkitTask maintenanceTask;
-    private int tickCounter;
+    private int maintenanceCounter;
     private boolean running;
 
     public VertexRuntime(JavaPlugin plugin) {
@@ -130,13 +130,13 @@ public final class VertexRuntime {
         analysis = new AnalysisThread(engine, 20_000);
         analysis.start();
 
+        clientInfo = new ClientInfoCollector(settings.get().clientInfo().timeoutMillis(),
+                settings.get().clientInfo().maxChannels());
         packets.start(analysis::submit, counters,
                 (id, payload, nanos) -> clientInfo.brandPayload(id, payload, nanos));
         platform = new PlatformDetector(plugin.getClass().getClassLoader(), log)
                 .detect(tickMonitor, packets.state() == PacketBridge.State.RUNNING);
 
-        clientInfo = new ClientInfoCollector(settings.get().clientInfo().timeoutMillis(),
-                settings.get().clientInfo().maxChannels());
         auditor = new AdminAuditor(() -> settings.get().audit());
         dispatcher = new AlertDispatcher(plugin, () -> messages, () -> settings.get(), preferences, pipeline,
                 () -> platform.adapters().messenger(), tracker);
@@ -198,7 +198,6 @@ public final class VertexRuntime {
     private void snapshotTick() {
         long now = System.nanoTime();
         tickMonitor.tick(now);
-        tickCounter++;
         for (Player p : Bukkit.getOnlinePlayers()) {
             try {
                 tracker.refresh(p, now);
@@ -235,7 +234,7 @@ public final class VertexRuntime {
         } else {
             clientInfo.poll(now);
         }
-        if (tickCounter % 10 == 0) {
+        if (++maintenanceCounter % 4 == 0) { // every 20 ticks
             audit.tick(now, wall);
             for (Player p : Bukkit.getOnlinePlayers()) {
                 analysis.submit(new Observation.SecondTick(p.getUniqueId(), p.getName(), now, counters.drain(p.getUniqueId())));
