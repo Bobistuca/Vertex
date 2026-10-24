@@ -255,6 +255,7 @@ def main():
             key = f"{f[2]}/{f[5]}/{f[6]}"
             summary_counts[key] = summary_counts.get(key, 0) + 1
     info["evidence_summary"] = summary_counts
+    info["admin_rows"] = [r.replace("\x1e", "=").replace("\x1f", ";")[:300] for r in rows if "\tADMIN\t" in r][:16]
     admin = [r.split("\t") for r in rows if r.startswith("V1\t") and "\tADMIN\t" in r and "AuditTarget" in r]
     def data_of(fields):
         pairs = fields[11].split("\x1f") if len(fields) > 11 and fields[11] else []
