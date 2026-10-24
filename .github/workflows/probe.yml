@@ -31,6 +31,7 @@ jobs:
           mkdir -p pe && cd pe && P=https://repo.codemc.io/repository/maven-releases/com/github/retrooper && curl -sSLfO $P/packetevents-spigot/2.14.0/packetevents-spigot-2.14.0.jar && curl -sSLfO $P/packetevents-api/2.14.0/packetevents-api-2.14.0.jar && curl -sSLfO $P/packetevents-netty-common/2.14.0/packetevents-netty-common-2.14.0.jar; ls
       - name: Inspect
         run: |
+          set +e
           mkdir -p out
           { 
           PE=$(ls w/pe/*.jar | tr '\n' ':')
