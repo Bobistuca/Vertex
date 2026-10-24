@@ -1,0 +1,144 @@
+== org/bukkit/bukkit
+    <latest>1.20.5-R0.1-SNAPSHOT</latest>
+== org/bukkit/craftbukkit
+== org/spigotmc/spigot
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/DependencyResolutionException
+ls: cannot access 'lib': No such file or directory
+ls: cannot access 'lib/*.jar': No such file or directory
+#### org.bukkit.entity.Player
+Error: class not found: org.bukkit.entity.Player
+#### org.bukkit.entity.Player$Spigot
+Error: class not found: org.bukkit.entity.Player$Spigot
+#### org.bukkit.Server
+Error: class not found: org.bukkit.Server
+#### org.bukkit.Server$Spigot
+Error: class not found: org.bukkit.Server$Spigot
+#### org.bukkit.scoreboard.Team
+Error: class not found: org.bukkit.scoreboard.Team
+#### Server$Spigot full
+Compiled from "Server.java"
+public class org.bukkit.Server$Spigot {
+  public org.bukkit.Server$Spigot();
+  public org.bukkit.configuration.file.YamlConfiguration getConfig();
+  public void restart();
+  public void broadcast(net.md_5.bungee.api.chat.BaseComponent);
+  public void broadcast(net.md_5.bungee.api.chat.BaseComponent...);
+}
+#### LivingEntity
+  public abstract org.bukkit.Location getEyeLocation();
+  public abstract int getMaximumNoDamageTicks();
+  public abstract double getLastDamage();
+  public abstract boolean hasPotionEffect(org.bukkit.potion.PotionEffectType);
+  public abstract org.bukkit.potion.PotionEffect getPotionEffect(org.bukkit.potion.PotionEffectType);
+  public abstract java.util.Collection<org.bukkit.potion.PotionEffect> getActivePotionEffects();
+  public abstract boolean isGliding();
+  public abstract boolean isSwimming();
+  public abstract boolean isRiptiding();
+  public abstract boolean isClimbing();
+#### HumanEntity
+  public abstract org.bukkit.inventory.InventoryView getOpenInventory();
+  public abstract org.bukkit.GameMode getGameMode();
+#### Entity
+  public abstract org.bukkit.Location getLocation();
+  public abstract org.bukkit.Location getLocation(org.bukkit.Location);
+  public abstract boolean isInWater();
+  public abstract org.bukkit.World getWorld();
+  public abstract boolean isValid();
+  public abstract java.util.UUID getUniqueId();
+  public abstract org.bukkit.entity.EntityType getType();
+  public abstract boolean isInsideVehicle();
+#### InventoryView
+Compiled from "InventoryView.java"
+public interface org.bukkit.inventory.InventoryView {
+  public static final int OUTSIDE;
+  public abstract org.bukkit.inventory.Inventory getTopInventory();
+  public abstract org.bukkit.inventory.Inventory getBottomInventory();
+  public abstract org.bukkit.entity.HumanEntity getPlayer();
+  public abstract org.bukkit.event.inventory.InventoryType getType();
+  public abstract void setItem(int, org.bukkit.inventory.ItemStack);
+  public abstract org.bukkit.inventory.ItemStack getItem(int);
+  public abstract void setCursor(org.bukkit.inventory.ItemStack);
+  public abstract org.bukkit.inventory.ItemStack getCursor();
+  public abstract org.bukkit.inventory.Inventory getInventory(int);
+  public abstract int convertSlot(int);
+  public abstract org.bukkit.event.inventory.InventoryType$SlotType getSlotType(int);
+  public abstract void close();
+  public abstract int countSlots();
+  public abstract boolean setProperty(org.bukkit.inventory.InventoryView$Property, int);
+  public abstract java.lang.String getTitle();
+  public abstract java.lang.String getOriginalTitle();
+  public abstract void setTitle(java.lang.String);
+}
+#### PlayerVelocityEvent
+Compiled from "PlayerVelocityEvent.java"
+public class org.bukkit.event.player.PlayerVelocityEvent extends org.bukkit.event.player.PlayerEvent implements org.bukkit.event.Cancellable {
+  public org.bukkit.event.player.PlayerVelocityEvent(org.bukkit.entity.Player, org.bukkit.util.Vector);
+  public boolean isCancelled();
+  public void setCancelled(boolean);
+  public org.bukkit.util.Vector getVelocity();
+  public void setVelocity(org.bukkit.util.Vector);
+  public org.bukkit.event.HandlerList getHandlers();
+  public static org.bukkit.event.HandlerList getHandlerList();
+}
+#### PlayerTeleportEvent
+Compiled from "PlayerTeleportEvent.java"
+public class org.bukkit.event.player.PlayerTeleportEvent extends org.bukkit.event.player.PlayerMoveEvent {
+  public org.bukkit.event.player.PlayerTeleportEvent(org.bukkit.entity.Player, org.bukkit.Location, org.bukkit.Location);
+  public org.bukkit.event.player.PlayerTeleportEvent(org.bukkit.entity.Player, org.bukkit.Location, org.bukkit.Location, org.bukkit.event.player.PlayerTeleportEvent$TeleportCause);
+  public org.bukkit.event.player.PlayerTeleportEvent$TeleportCause getCause();
+  public org.bukkit.event.HandlerList getHandlers();
+  public static org.bukkit.event.HandlerList getHandlerList();
+}
+#### PotionEffectType speed names
+  public static final org.bukkit.potion.PotionEffectType SPEED;
+  public static final org.bukkit.potion.PotionEffectType SLOWNESS;
+  public static final org.bukkit.potion.PotionEffectType JUMP_BOOST;
+  public static final org.bukkit.potion.PotionEffectType LEVITATION;
+  public static final org.bukkit.potion.PotionEffectType SLOW_FALLING;
+  public static final org.bukkit.potion.PotionEffectType DOLPHINS_GRACE;
+#### Material check
+  public static final org.bukkit.Tag<org.bukkit.Material> WALL_POST_OVERRIDE;
+  public static final org.bukkit.Tag<org.bukkit.Material> CLIMBABLE;
+  public static final org.bukkit.Tag<org.bukkit.Material> FALL_DAMAGE_RESETTING;
+#### ServicesManager
+Compiled from "ServicesManager.java"
+public interface org.bukkit.plugin.ServicesManager {
+  public abstract <T> void register(java.lang.Class<T>, T, org.bukkit.plugin.Plugin, org.bukkit.plugin.ServicePriority);
+  public abstract void unregisterAll(org.bukkit.plugin.Plugin);
+  public abstract void unregister(java.lang.Class<?>, java.lang.Object);
+#### Block
+  public abstract org.bukkit.Material getType();
+  public abstract boolean isLiquid();
+  public abstract boolean isPassable();
+#### World getNearbyEntities / getChunk
+  public abstract org.bukkit.block.Block getBlockAt(int, int, int);
+  public abstract boolean isChunkLoaded(org.bukkit.Chunk);
+  public abstract boolean isChunkLoaded(int, int);
+  public abstract java.util.Collection<org.bukkit.entity.Entity> getNearbyEntities(org.bukkit.Location, double, double, double);
+  public abstract java.util.Collection<org.bukkit.entity.Entity> getNearbyEntities(org.bukkit.Location, double, double, double, java.util.function.Predicate<? super org.bukkit.entity.Entity>);
+  public abstract java.util.Collection<org.bukkit.entity.Entity> getNearbyEntities(org.bukkit.util.BoundingBox);
+  public abstract java.util.Collection<org.bukkit.entity.Entity> getNearbyEntities(org.bukkit.util.BoundingBox, java.util.function.Predicate<? super org.bukkit.entity.Entity>);
+#### PlayerInventory/Inventory
+Compiled from "InventoryCloseEvent.java"
+public class org.bukkit.event.inventory.InventoryCloseEvent extends org.bukkit.event.inventory.InventoryEvent {
+  public org.bukkit.event.inventory.InventoryCloseEvent(org.bukkit.inventory.InventoryView);
+  public final org.bukkit.entity.HumanEntity getPlayer();
+  public org.bukkit.event.HandlerList getHandlers();
+  public static org.bukkit.event.HandlerList getHandlerList();
+}
+#### ServerCommand 
+Compiled from "PluginCommand.java"
+public final class org.bukkit.command.PluginCommand extends org.bukkit.command.Command implements org.bukkit.command.PluginIdentifiableCommand {
+  public boolean execute(org.bukkit.command.CommandSender, java.lang.String, java.lang.String[]);
+  public void setExecutor(org.bukkit.command.CommandExecutor);
+  public org.bukkit.command.CommandExecutor getExecutor();
+  public void setTabCompleter(org.bukkit.command.TabCompleter);
+  public org.bukkit.command.TabCompleter getTabCompleter();
+  public org.bukkit.plugin.Plugin getPlugin();
+  public java.util.List<java.lang.String> tabComplete(org.bukkit.command.CommandSender, java.lang.String, java.lang.String[]) throws org.bukkit.command.CommandException, java.lang.IllegalArgumentException;
+  public java.lang.String toString();
+}
