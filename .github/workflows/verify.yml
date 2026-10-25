@@ -1,0 +1,581 @@
+name: Verify
+
+# Manual runtime verification of Vertex.jar on real servers. Nothing here is committed as test data: the harness is
+# generated from this file at run time, servers are obtained from the official tooling (Spigot BuildTools, the PaperMC
+# download API) and from the plugin vendors, and every result is printed in the job log and uploaded as a workflow
+# artifact. Synthetic cheat input is produced by a protocol library (mineflayer) and is labelled as synthetic in the
+# results; it is NOT the Meteor Client and is not a vanilla client.
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Optional comma-separated cells, for example "paper:1.21.11,paper:26.1.2+via" (empty = all)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  VERTEX_BUILD_ID: build-${{ github.sha }}
+
+jobs:
+  plan:
+    name: Select the cells
+    runs-on: ubuntu-latest
+    outputs:
+      cells: ${{ steps.p.outputs.cells }}
+      servers: ${{ steps.p.outputs.servers }}
+    steps:
+      - id: p
+        env:
+          ONLY: ${{ github.event.inputs.only }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          only = [t for t in os.environ.get("ONLY", "").replace(" ", "").split(",") if t]
+          J21, J25 = "21", "25"
+          roles_all = "ordinary,op,staff,staff-test,wildcard"
+          cells = []
+          for impl in ("paper", "spigot", "craftbukkit"):
+              cells.append(dict(impl=impl, version="1.21.11", java=J21, bot="1.21.11", via=False, roles=roles_all))
+              cells.append(dict(impl=impl, version="26.1.2", java=J25, bot="26.1.2", via=False, roles=roles_all))
+              cells.append(dict(impl=impl, version="26.2", java=J25, bot="", via=False, roles=""))
+              cells.append(dict(impl=impl, version="26.3", java=J25, bot="", via=False, roles=""))
+          # A client older than the server, translated by ViaVersion (ViaBackwards installed as well).
+          cells.append(dict(impl="paper", version="1.21.11", java=J21, bot="1.21.4", via=True, roles="ordinary,op"))
+          for c in cells:
+              c["id"] = f"{c['impl']}:{c['version']}" + ("+via" if c["via"] else "")
+              c["slug"] = c["id"].replace(":", "-").replace("+", "-")
+          cells = [c for c in cells if not only or c["id"] in only]
+          servers = sorted({(c["version"], c["java"]) for c in cells if c["impl"] != "paper"})
+          print("cells=" + json.dumps({"include": cells}))
+          print("servers=" + json.dumps({"include": [dict(version=v, java=j) for v, j in servers] or [dict(version="none", java="21")]}))
+          PY
+
+  jar:
+    name: Build Vertex.jar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - run: ./gradlew :plugin:shadowJar --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verify-jar
+          path: plugin/build/libs/Vertex.jar
+          retention-days: 1
+          if-no-files-found: error
+
+  servers:
+    name: Build CraftBukkit and Spigot ${{ matrix.version }}
+    needs: plan
+    if: ${{ !contains(needs.plan.outputs.servers, '"none"') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.servers) }}
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Download BuildTools and build
+        run: |
+          set -e
+          mkdir -p bt out && cd bt
+          curl -fsSL -o BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+          BT_BUILD=$(curl -fsSL "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/api/json?tree=number" | grep -oE '"number":[0-9]+' | cut -d: -f2)
+          curl -fsSL "https://hub.spigotmc.org/versions/${{ matrix.version }}.json" -o ../out/versions.json
+          java -jar BuildTools.jar --rev "${{ matrix.version }}" --compile craftbukkit,spigot --output-dir ../out
+          cd ../out
+          { echo "buildtools=$BT_BUILD"; echo "spigot_build=$(grep -m1 '"name"' versions.json | sed 's/[^0-9]//g')"; } > build-info.txt
+          ls -l; cat build-info.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verify-servers-${{ matrix.version }}
+          path: |
+            out/craftbukkit-*.jar
+            out/spigot-*.jar
+            out/build-info.txt
+          retention-days: 1
+          if-no-files-found: error
+
+  verify:
+    name: ${{ matrix.id }}
+    needs: [ plan, jar, servers ]
+    if: ${{ !cancelled() && needs.jar.result == 'success' && (needs.servers.result == 'success' || needs.servers.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.cells) }}
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v5
+        with:
+          name: verify-jar
+          path: jars
+      - uses: actions/download-artifact@v5
+        if: matrix.impl != 'paper'
+        with:
+          name: verify-servers-${{ matrix.version }}
+          path: servers
+
+      - name: Write the harness
+        run: |
+          mkdir -p harness
+          cat > harness/package.json <<'JSON'
+          { "name": "vertex-verify-bot", "private": true, "dependencies": { "mineflayer": "4.39.0" } }
+          JSON
+          cat > harness/bot.js <<'JS'
+          // Synthetic protocol client driven over stdin. It is NOT the Meteor Client and NOT the official client:
+          // mineflayer re-implements the vanilla movement physics, and the "hack" phases change its constants.
+          const mineflayer = require('mineflayer');
+          const [host, port, username, version] = process.argv.slice(2);
+          const bot = mineflayer.createBot({ host, port: Number(port), username, version, auth: 'offline',
+                                             checkTimeoutInterval: 90000 });
+          const out = (l) => process.stdout.write(l + '\n');
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+          const gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += Math.random(); return (s - 3) / 0.7071; };
+          bot.once('spawn', () => out('BOT_SPAWN ' + bot.entity.position.x.toFixed(1) + ' ' + bot.entity.position.y.toFixed(1)
+            + ' ' + bot.entity.position.z.toFixed(1) + ' version=' + bot.version));
+          bot.on('kicked', (r) => out('BOT_KICKED ' + JSON.stringify(r).slice(0, 300)));
+          bot.on('error', (e) => out('BOT_ERROR ' + String(e && e.message).slice(0, 300)));
+          bot.on('end', (r) => { out('BOT_END ' + r); setTimeout(() => process.exit(0), 200); });
+
+          function stand() {
+            const me = bot.entity.position;
+            return Object.values(bot.entities).filter((e) => e !== bot.entity && e.name === 'armor_stand')
+              .sort((a, b) => a.position.distanceTo(me) - b.position.distanceTo(me))[0];
+          }
+          async function walk(ms, mult) {
+            bot.physics.playerSpeed = 0.1 * mult;
+            let packets = 0; const count = () => { packets++; };
+            bot.on('move', count);
+            const start = bot.entity.position.clone();
+            bot.setControlState('forward', true); bot.setControlState('sprint', true); bot.setControlState('jump', true);
+            await sleep(ms);
+            for (const c of ['forward', 'sprint', 'jump']) bot.setControlState(c, false);
+            bot.removeListener('move', count);
+            bot.physics.playerSpeed = 0.1;
+            const d = bot.entity.position.distanceTo(start);
+            out(`WALK_STATS mult=${mult} ms=${ms} client_moves=${packets} blocks=${d.toFixed(1)} avg_blocks_per_s=${(d / (ms / 1000)).toFixed(2)}`);
+          }
+          async function clicks(mode, ms) {
+            const end = Date.now() + ms; let n = 0, air = 0;
+            while (Date.now() < end) {
+              const t = stand();
+              if (t) { bot.attack(t); n++; } else { bot.swingArm(); air++; }
+              await sleep(mode === 'const' ? 100 : Math.max(60, Math.min(320, 105 + gauss() * 32)));
+            }
+            out(`CLICK_STATS mode=${mode} ms=${ms} attacks=${n} swings_without_target=${air}`);
+          }
+          async function reach(count, interval) {
+            let n = 0;
+            for (let i = 0; i < count; i++) {
+              const t = stand(); if (!t) { await sleep(interval); continue; }
+              out(`REACH_TARGET distance_to_centre=${t.position.distanceTo(bot.entity.position).toFixed(2)}`);
+              bot.attack(t); n++; await sleep(interval);
+            }
+            out(`REACH_STATS attempts=${n}`);
+          }
+          let queue = Promise.resolve();
+          let buf = '';
+          process.stdin.on('data', (c) => {
+            buf += c.toString(); let i;
+            while ((i = buf.indexOf('\n')) >= 0) {
+              const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+              const [cmd, ...a] = line.split(' ');
+              queue = queue.then(async () => {
+                try {
+                  if (cmd === 'walk') await walk(Number(a[0]), Number(a[1]));
+                  else if (cmd === 'clicks') await clicks(a[0], Number(a[1]));
+                  else if (cmd === 'reach') await reach(Number(a[0]), Number(a[1]));
+                  else if (cmd === 'idle') await sleep(Number(a[0]));
+                  else if (cmd === 'quit') { bot.quit(); return; }
+                  out('PHASE_DONE ' + line);
+                } catch (e) { out('PHASE_ERROR ' + line + ' ' + e.message); }
+              });
+            }
+          });
+          JS
+          cat > harness/verify.py <<'PY'
+          #!/usr/bin/env python3
+          """Runs one verification cell. Everything is measured on a real server process; synthetic input is labelled."""
+          import argparse, json, os, pathlib, re, secrets, shutil, socket, struct, subprocess, sys, threading, time
+
+          SECTION = re.compile("§.")
+          strip = lambda s: SECTION.sub("", s)
+
+
+          class Rcon:
+              def __init__(self, port, password, timeout=20):
+                  self.s = socket.create_connection(("127.0.0.1", port), timeout=timeout); self.s.settimeout(timeout); self.i = 0
+                  self._send(3, password)
+                  if self._recv()[0] == -1: raise RuntimeError("RCON authentication failed")
+              def _send(self, kind, payload):
+                  self.i += 1; d = struct.pack("<ii", self.i, kind) + payload.encode() + b"\x00\x00"
+                  self.s.sendall(struct.pack("<i", len(d)) + d)
+              def _exact(self, n):
+                  b = b""
+                  while len(b) < n:
+                      c = self.s.recv(n - len(b))
+                      if not c: raise RuntimeError("RCON closed")
+                      b += c
+                  return b
+              def _recv(self):
+                  (n,) = struct.unpack("<i", self._exact(4)); body = self._exact(n)
+                  rid, kind = struct.unpack("<ii", body[:8]); return rid, body[8:-2].decode("utf-8", "replace")
+              def command(self, text):
+                  self._send(2, text); return self._recv()[1]
+
+
+          class Proc:
+              def __init__(self, cmd, cwd):
+                  self.lines = []; self.lock = threading.Lock()
+                  self.p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                            text=True, encoding="utf-8", errors="replace", bufsize=1)
+                  threading.Thread(target=self._pump, daemon=True).start()
+              def _pump(self):
+                  for l in self.p.stdout:
+                      with self.lock: self.lines.append(l.rstrip("\n"))
+              def send(self, text):
+                  try: self.p.stdin.write(text + "\n"); self.p.stdin.flush()
+                  except OSError: pass
+              def snap(self):
+                  with self.lock: return list(self.lines)
+              def wait(self, pattern, timeout, start=0):
+                  rx = re.compile(pattern); end = time.time() + timeout
+                  while time.time() < end:
+                      ls = self.snap()
+                      for i in range(start, len(ls)):
+                          if rx.search(strip(ls[i])): return i
+                      if self.p.poll() is not None: return None
+                      time.sleep(0.4)
+                  return None
+
+
+          def offline_name_ok(n): return re.fullmatch(r"[A-Za-z0-9_]{3,16}", n) is not None
+          ALERT = re.compile(r"([A-Za-z0-9_]{3,16}) +• +([A-Za-z]+) +• +(\d+)x")
+
+
+          def main():
+              ap = argparse.ArgumentParser()
+              for a in ("impl", "version", "server-jar", "vertex-jar", "workdir", "out", "roles", "bot", "server-id", "plugins-dir"):
+                  ap.add_argument("--" + a, default="")
+              ap.add_argument("--via", default="false")
+              ap.add_argument("--lp", default="")
+              args = ap.parse_args()
+              work = pathlib.Path(args.workdir).resolve()
+              shutil.rmtree(work, ignore_errors=True); (work / "plugins" / "Vertex").mkdir(parents=True)
+              shutil.copy(args.server_jar, work / "server.jar"); shutil.copy(args.vertex_jar, work / "plugins" / "Vertex.jar")
+              via = args.via == "true"
+              roles = [r for r in args.roles.split(",") if r]
+              if args.plugins_dir:
+                  for f in pathlib.Path(args.plugins_dir).glob("*.jar"):
+                      n = f.name.lower()
+                      if ("luckperms" in n and (any(r.startswith("staff") or r == "wildcard" for r in roles))) or (via and ("via" in n)):
+                          shutil.copy(f, work / "plugins" / f.name)
+              (work / "plugins" / "Vertex" / "config.yml").write_text(
+                  "language: en_US\ntest-mode:\n  enabled: true\n  duration-minutes: 15\n")
+              pw = secrets.token_hex(8)
+              (work / "eula.txt").write_text("eula=true\n")
+              (work / "server.properties").write_text("\n".join([
+                  "online-mode=false", "server-port=25565", "enable-rcon=true", "rcon.port=25575", f"rcon.password={pw}",
+                  "broadcast-rcon-to-ops=false", "view-distance=4", "simulation-distance=4", "spawn-protection=0", "max-players=10",
+                  "generate-structures=false", "allow-nether=false", "level-type=minecraft\\:flat", "difficulty=peaceful",
+                  "spawn-monsters=false", "spawn-animals=false", "allow-flight=true", "gamemode=survival", "max-tick-time=-1",
+                  "motd=Vertex verification", ""]))
+
+              results = {"cell": {"impl": args.impl, "version": args.version, "via": via, "bot_version": args.bot or "none",
+                                  "server_id": args.server_id, "roles": roles},
+                         "checks": [], "roles": {}, "notes": []}
+
+              def check(name, ok, detail="", status=None):
+                  st = status or ("pass" if ok else "fail")
+                  results["checks"].append({"name": name, "status": st, "detail": str(detail)[:600]})
+                  print(f"[{st.upper():7}] {name}: {str(detail)[:300]}", flush=True)
+
+              t0 = time.time()
+              srv = Proc(["java", "-Xms512M", "-Xmx1536M", "-Dcom.mojang.eula.agree=true", "-jar", "server.jar", "nogui"], work)
+              done = srv.wait(r"Done \(", 600)
+              results["cell"]["java"] = subprocess.run(["java", "-version"], capture_output=True, text=True).stderr.splitlines()[0]
+              check("server-start", done is not None, f"{time.time() - t0:.0f}s to reach Done; {results['cell']['java']}")
+              if done is None:
+                  results["log_tail"] = [strip(l) for l in srv.snap()[-60:]]
+                  return finish(results, args, srv)
+
+              rcon = None
+              for _ in range(40):
+                  try: rcon = Rcon(25575, pw); break
+                  except (OSError, RuntimeError): time.sleep(1)
+              check("rcon-connect", rcon is not None)
+              def rc(cmd):
+                  try: return strip(rcon.command(cmd))
+                  except (OSError, RuntimeError) as e: return f"<rcon error {e}>"
+
+              ver = rc("version")
+              for _ in range(6):
+                  if "MC:" in ver or "1." in ver or "26." in ver: break
+                  time.sleep(3); ver = rc("version")
+              results["cell"]["server_version_output"] = ver[:300]
+              log = "\n".join(strip(l) for l in srv.snap())
+              check("plugin-enabled", "Enabling Vertex" in log and srv.wait(r"(Vertex is running)", 30) is not None, "startup banner")
+              bad = [l for l in log.split("\n") if re.search(r"Could not load|Error occurred while enabling Vertex|SEVERE.*Vertex|NoClassDefFoundError|NoSuchMethodError|IncompatibleClassChangeError", l)]
+              check("no-load-errors", not bad, bad[:3])
+              for want in ("ViaVersion", "ViaBackwards"):
+                  if via: check(f"{want}-enabled", re.search(rf"Enabling {want}", log) is not None, want)
+              status = rc("vertex status"); results["status_output"] = status[:3500]
+              m = re.search(r"Packet observation: ([^\n]+)", status)
+              check("packet-listener-running", bool(m) and m.group(1).startswith("running"), m.group(1) if m else status[:200])
+
+              if not roles or not args.bot:
+                  results["notes"].append("No client was connected on this cell (no protocol client data for this Minecraft version): "
+                                          "startup, packet-listener initialization and commands only.")
+                  out_help = rc("vertex help")
+                  check("command-diagnose-listed", "diagnose" in out_help and "testmode" in out_help, out_help[:200])
+                  return finish(results, args, srv)
+
+              # ---- bots -------------------------------------------------------------------------------------
+              pkg = pathlib.Path("harness")
+              def start_bot(name):
+                  p = Proc(["node", str(pkg / "bot.js"), "127.0.0.1", "25565", name, args.bot], str(pkg))
+                  if p.wait(r"BOT_SPAWN", 120) is None:
+                      return p, False
+                  return p, True
+
+              def lines_since(idx): return [strip(l) for l in srv.snap()[idx:]]
+
+              def console(cmd, wait=2.0):
+                  start = len(srv.snap()); srv.send(cmd); time.sleep(wait); return lines_since(start)
+
+              def diag(name):
+                  start = len(srv.snap()); srv.send(f"vertex diagnose {name}"); time.sleep(2.5)
+                  return [l for l in lines_since(start) if "▸" in l or "Diagnosis" in l]
+
+              def findings(window):
+                  c = {}
+                  for l in window:
+                      for who, check_id, n in ALERT.findall(l):
+                          c.setdefault(who, {}); c[who][check_id] = c[who].get(check_id, 0) + int(n)
+                  return c
+
+              def run_phase(bot, name, label, cmd, who, seconds_extra=4.0):
+                  start = len(srv.snap()); t = time.time()
+                  bot.send(cmd)
+                  ok = bot.wait(r"PHASE_DONE " + re.escape(cmd), 400) is not None
+                  time.sleep(seconds_extra)  # aggregation window + maintenance tick
+                  window = lines_since(start)
+                  f = findings(window).get(who, {})
+                  stats = [strip(l) for l in bot.snap() if re.search(r"(WALK|CLICK|REACH)_STATS", l)][-1:]
+                  rec = {"phase": label, "command": cmd, "seconds": round(time.time() - t, 1), "completed": ok,
+                         "findings": f, "client_stats": stats}
+                  print(f"    phase {label}: findings={f} stats={stats}", flush=True)
+                  return rec
+
+              def summon(who, dx):
+                  rc(f"kill @e[type=armor_stand]")
+                  rc(f"execute at {who} run summon minecraft:armor_stand ~{dx} ~ ~ {{NoGravity:1b,Invulnerable:1b,ShowArms:1b}}")
+                  time.sleep(1.5)
+
+              PHASES = [
+                  ("legit-sprint-jump", "walk 25000 1.0", None, "expect none"),
+                  ("bhop-1.35x", "walk 25000 1.35", None, "expect MovementSustainedSpeed or MovementSpeed"),
+                  ("bhop-2.0x", "walk 15000 2.0", None, "expect MovementSustainedSpeed or MovementSpeed"),
+                  ("reach-near-2.5", "reach 25 400", 2.5, "expect none"),
+                  ("reach-far-5.8", "reach 15 450", 5.8, "expect ReachDistance"),
+                  ("autoclick-const-100ms", "clicks const 25000", 2.0, "expect AutoClickerPattern"),
+                  ("clicks-human-like", "clicks human 25000", 2.0, "expect none"),
+              ]
+              EXPECT_DETECT = {"bhop-1.35x": ("MovementSustainedSpeed", "MovementSpeed"), "bhop-2.0x": ("MovementSustainedSpeed", "MovementSpeed"),
+                               "reach-far-5.8": ("ReachDistance",), "autoclick-const-100ms": ("AutoClickerPattern",)}
+
+              for role in roles:
+                  name = {"ordinary": "VxOrdinary", "op": "VxOperator", "staff": "VxStaff", "staff-test": "VxStaffTest", "wildcard": "VxWildcard"}[role]
+                  rr = {"account": name, "role": role, "phases": [], "diagnose_before": [], "diagnose_after": []}
+                  results["roles"][role] = rr
+                  print(f"=== role {role} ({name})", flush=True)
+                  if role in ("staff", "staff-test", "wildcard"):
+                      if not args.lp:
+                          rr["skipped"] = "LuckPerms jar unavailable"; continue
+                      pre, ok = start_bot(name)  # LuckPerms needs the user to exist before groups can be assigned by name
+                      time.sleep(3); pre.send("quit"); time.sleep(3)
+                      console("lp creategroup mod")
+                      if role == "wildcard": console(f"lp user {name} permission set * true")
+                      else: console(f"lp user {name} parent add mod")
+                  if role == "op": console(f"op {name}")
+                  bot, ok = start_bot(name)
+                  rr["joined"] = ok
+                  if not ok:
+                      rr["error"] = [strip(l) for l in bot.snap()[-5:]]; continue
+                  time.sleep(8)  # join grace (5 s) + client information report
+                  if role == "staff-test":
+                      rr["testmode_output"] = console(f"vertex testmode {name} on")[-2:]
+                  rr["account_state"] = {"op": role == "op", "game_mode": "SURVIVAL",
+                                         "luckperms_group_mod": role in ("staff", "staff-test"), "wildcard_permission": role == "wildcard",
+                                         "test_mode": role == "staff-test"}
+                  rr["diagnose_before"] = diag(name)
+                  for label, cmd, dist, expect in PHASES:
+                      if dist is not None: summon(name, dist)
+                      else: rc("kill @e[type=armor_stand]")
+                      rec = run_phase(bot, label, label, cmd, name)
+                      rec["expectation"] = expect
+                      rr["phases"].append(rec)
+                  rr["diagnose_after"] = diag(name)
+                  rr["history"] = [l for l in console(f"vertex history {name} 25", 2.5) if "•" in l][:25]
+                  bot.send("quit"); time.sleep(3)
+
+                  # ---- evaluate against the documented expectation for this role --------------------------
+                  exempt_expected = role in ("staff",)
+                  for rec in rr["phases"]:
+                      label = rec["phase"]; got = rec["findings"]
+                      if exempt_expected:
+                          check(f"{role}/{label}: no detections for an exempt staff member", not got, got)
+                      elif label in EXPECT_DETECT:
+                          hit = any(k in got for k in EXPECT_DETECT[label])
+                          check(f"{role}/{label}: detected ({'/'.join(EXPECT_DETECT[label])})", hit, got or "no alert",
+                                status=None)
+                      else:
+                          check(f"{role}/{label}: no false positive", not got, got)
+                  joined = "\n".join(rr["diagnose_after"])
+                  if role == "staff":
+                      check("staff/diagnose-explains-exemption", "EXEMPT" in joined and ("LUCKPERMS_GROUP" in "\n".join(rr["diagnose_after"]) or "mod" in joined.lower()), joined[:400])
+                  if role == "staff-test":
+                      check("staff-test/diagnose-shows-test-mode", "ACTIVE" in joined and "overridden by test mode" in joined, joined[:400])
+                  if role == "op":
+                      check("op/not-exempt-by-default", "none" in joined.lower() and "OPERATOR" not in joined, joined[:400])
+                  if role == "wildcard":
+                      check("wildcard/bypass-not-silently-granted", "WILDCARD_ONLY" in joined, joined[:400])
+
+              return finish(results, args, srv)
+
+
+          def finish(results, args, srv):
+              srv.send("stop"); time.sleep(8)
+              ev = pathlib.Path(args.workdir) / "plugins" / "Vertex" / "data" / "evidence.log"
+              if ev.exists():
+                  rows = ev.read_text(encoding="utf-8", errors="replace").split("\n")
+                  results["evidence_rows"] = len([r for r in rows if r])
+                  results["evidence_sample"] = rows[:12]
+              results["passed"] = sum(1 for c in results["checks"] if c["status"] == "pass")
+              results["failed"] = sum(1 for c in results["checks"] if c["status"] == "fail")
+              pathlib.Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+              pathlib.Path(args.out).write_text(json.dumps(results, indent=1, ensure_ascii=False))
+              print("RESULT_JSON " + json.dumps(results, ensure_ascii=False)[:60000], flush=True)
+              return 0 if results["failed"] == 0 else 1
+
+
+          sys.exit(main())
+          PY
+          cd harness && npm install --no-audit --no-fund >/dev/null 2>&1 || npm install --no-audit --no-fund | tail -5
+
+      - name: Obtain the server
+        id: server
+        run: |
+          set -e
+          mkdir -p run
+          if [ "${{ matrix.impl }}" = "paper" ]; then
+            API="https://fill.papermc.io/v3/projects/paper/versions/${{ matrix.version }}/builds/latest"
+            curl -fsSL -H 'User-Agent: Bobistuca-Vertex-CI (https://github.com/Bobistuca/Vertex)' "$API" -o paper-build.json
+            python3 - <<'PY'
+          import json, urllib.request
+          d = json.load(open("paper-build.json"))
+          dl = d["downloads"]["server:default"]
+          req = urllib.request.Request(dl["url"], headers={"User-Agent": "Bobistuca-Vertex-CI (https://github.com/Bobistuca/Vertex)"})
+          open("run/server.jar", "wb").write(urllib.request.urlopen(req).read())
+          open("server-id.txt", "w").write(f"Paper build {d.get('id')} ({d.get('channel')})")
+          PY
+          else
+            cp "servers/${{ matrix.impl }}-${{ matrix.version }}.jar" run/server.jar
+            echo "BuildTools $(grep buildtools servers/build-info.txt | cut -d= -f2); Spigot build $(grep spigot_build servers/build-info.txt | cut -d= -f2)" > server-id.txt
+          fi
+          cat server-id.txt
+          echo "id=$(cat server-id.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Obtain optional plugins (LuckPerms, ViaVersion, ViaBackwards)
+        id: plugins
+        run: |
+          mkdir -p optional
+          python3 - <<'PY'
+          import json, re, urllib.request
+          UA = {"User-Agent": "Bobistuca-Vertex-CI (https://github.com/Bobistuca/Vertex)"}
+          def get(url): return urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60).read()
+          info = []
+          try:
+              d = json.loads(get("https://metadata.luckperms.net/data/downloads"))
+              url = d["downloads"]["bukkit"]
+              open("optional/LuckPerms-Bukkit.jar", "wb").write(get(url)); info.append(f"LuckPerms {d.get('version', '?')} from {url}")
+          except Exception as e:
+              info.append(f"LuckPerms unavailable: {e}")
+          for art in ("viaversion", "viabackwards"):
+              try:
+                  meta = get(f"https://repo.viaversion.com/com/viaversion/{art}/maven-metadata.xml").decode()
+                  v = re.search(r"<release>([^<]+)</release>", meta) or re.search(r"<latest>([^<]+)</latest>", meta)
+                  v = v.group(1)
+                  open(f"optional/{art}.jar", "wb").write(get(f"https://repo.viaversion.com/com/viaversion/{art}/{v}/{art}-{v}.jar"))
+                  info.append(f"{art} {v}")
+              except Exception as e:
+                  info.append(f"{art} unavailable: {e}")
+          open("optional/info.txt", "w").write("; ".join(info)); print("; ".join(info))
+          PY
+          echo "info=$(cat optional/info.txt)" >> "$GITHUB_OUTPUT"
+          if ls optional/LuckPerms-Bukkit.jar >/dev/null 2>&1; then echo "lp=yes" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Run the verification
+        run: |
+          python3 harness/verify.py --impl "${{ matrix.impl }}" --version "${{ matrix.version }}" \
+            --server-jar run/server.jar --vertex-jar jars/Vertex.jar --workdir "$RUNNER_TEMP/server" \
+            --out "results/${{ matrix.slug }}.json" --roles "${{ matrix.roles }}" --bot "${{ matrix.bot }}" \
+            --server-id "${{ steps.server.outputs.id }}; optional plugins: ${{ steps.plugins.outputs.info }}" \
+            --plugins-dir optional --via "${{ matrix.via }}" --lp "${{ steps.plugins.outputs.lp }}"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verify-result-${{ matrix.slug }}
+          path: results/
+          retention-days: 14
+
+  report:
+    name: Summary
+    needs: verify
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: verify-result-*
+          path: results
+          merge-multiple: true
+      - name: Summarize
+        run: |
+          python3 - <<'PY'
+          import glob, json, os
+          out = ["| Cell | Server | Client | Passed | Failed |", "|---|---|---|---|---|"]
+          detail = []
+          for f in sorted(glob.glob("results/*.json")):
+              d = json.load(open(f)); c = d["cell"]
+              out.append(f"| {c['impl']} {c['version']}{' +ViaVersion' if c['via'] else ''} | {c['server_id'][:90]} | {c['bot_version']} | {d['passed']} | {d['failed']} |")
+              detail.append(f"\n### {c['impl']} {c['version']}{' +ViaVersion' if c['via'] else ''} (client {c['bot_version']}, {c.get('java','')})\n")
+              for n in d.get("notes", []): detail.append(f"_{n}_")
+              for k in d["checks"]: detail.append(f"- **{k['status']}** `{k['name']}` {k['detail'][:240]}")
+              for role, r in d["roles"].items():
+                  detail.append(f"\n**role {role}** ({r.get('account')}): {r.get('account_state')}")
+                  for ph in r.get("phases", []): detail.append(f"  - {ph['phase']} ({ph['seconds']} s) findings={ph['findings']} {ph['client_stats']}")
+                  for l in r.get("diagnose_after", [])[:40]: detail.append(f"    {l[:220]}")
+          text = "\n".join(out) + "\n" + "\n".join(detail) + "\n"
+          open(os.environ["GITHUB_STEP_SUMMARY"], "a").write(text)
+          print(text)
+          PY
