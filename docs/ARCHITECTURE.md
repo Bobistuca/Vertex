@@ -12,6 +12,7 @@ core/     Server-independent logic. No Bukkit, Spigot or Paper classes. Fully un
   client/     join-time client information collector (brand parser, provenance)
   recipient/  alert recipient rules and command access rules
   storage/    bounded evidence history and personal preferences
+  staff/      configured staff groups, exemption registry and evaluator
   platform/   capability record, check catalogue, messenger / metrics interfaces
 plugin/   Bukkit-facing code, packaged (shaded) into Vertex.jar
   packet/     PacketEvents lifecycle (load / init / terminate) and the observe-only packet listener
@@ -22,7 +23,6 @@ plugin/   Bukkit-facing code, packaged (shaded) into Vertex.jar
   integration/ optional LuckPerms group auditing
 paper/    Paper-only adapter (native Adventure, TPS/MSPT, client brand). Compiled against the Paper API,
           embedded as .class.bin resources and loaded reflectively only when Paper is detected.
-smoke/    Test-only helper plugin and scripts for the CI smoke tests (not part of Vertex.jar).
 ```
 
 ## Threads

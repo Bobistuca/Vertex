@@ -13,6 +13,7 @@ public record Settings(
         Grace grace,
         Checks checks,
         Audit audit,
+        Staff staff,
         Storage storage) {
 
     /** Palette (light green, dark green, white by default) and label symbols. */
@@ -23,7 +24,7 @@ public record Settings(
 
     public record Sound(boolean enabled, String name, double volume, double pitch) { }
 
-    public record Recipients(boolean operators, boolean permission, Set<String> gameModes) { }
+    public record Recipients(boolean operators, boolean permission, boolean staff, Set<String> gameModes) { }
 
     public record Alerts(long windowMillis, int maxPerPlayerPerMinute, int maxPerRecipientPerMinute,
                          boolean logToConsole, ActionBar actionBar, Sound sound, Recipients recipients) { }
@@ -32,7 +33,7 @@ public record Settings(
 
     public record Grace(long joinMillis, long teleportMillis, long respawnMillis, long worldChangeMillis,
                         long velocityMillis, long damageMillis, long gameModeMillis, long flightMillis,
-                        double lowTpsThreshold) { }
+                        long rankChangeMillis, double lowTpsThreshold) { }
 
     public record InvalidValues(boolean enabled) { }
 
@@ -69,6 +70,17 @@ public record Settings(
                         long reconcileCorrelationMillis, Set<UUID> trustedUuids, Set<UUID> authorizedActors,
                         boolean consoleAuthorized, Monitored monitored, Set<String> sensitiveTags,
                         List<String> monitoredPermissions, boolean notifyAuthorized, boolean notifyNoChange) { }
+
+    /**
+     * Administrative staff recognition.
+     *
+     * @param exemptFromGameplayChecks master switch for the gameplay-check bypass (group and permission based)
+     * @param luckPerms                use the LuckPerms API to recognize groups
+     * @param groups                   configured ranks: group ids or labels that have an entry in {@code mappings}
+     * @param mappings                 label -> candidate real group ids (for example "Mod Plus" -> modplus, mod_plus)
+     */
+    public record Staff(boolean exemptFromGameplayChecks, boolean luckPerms, List<String> groups,
+                        java.util.Map<String, List<String>> mappings) { }
 
     public record Storage(int maxEntries, long maxBytes, int retentionDays, int queueCapacity,
                           int memoryPerPlayer, int memoryGlobal) { }

@@ -8,7 +8,7 @@ import io.github.bobistuca.vertex.core.config.Settings;
  */
 public final class GraceState {
     /** Why a check is currently suppressed. */
-    public enum Reason { JOIN, TELEPORT, RESPAWN, WORLD_CHANGE, VELOCITY, DAMAGE, GAME_MODE, FLIGHT, LOW_TPS }
+    public enum Reason { JOIN, TELEPORT, RESPAWN, WORLD_CHANGE, VELOCITY, DAMAGE, GAME_MODE, FLIGHT, RANK_CHANGE, LOW_TPS }
 
     private static final long NEVER = Long.MIN_VALUE;
 
@@ -21,6 +21,7 @@ public final class GraceState {
     private volatile long gameMode = NEVER;
     private volatile long flight = NEVER;
     private volatile long windowChange = NEVER;
+    private volatile long rankChange = NEVER;
 
     public void joined(long nanos) { join = nanos; }
     public void teleported(long nanos) { teleport = nanos; }
@@ -31,6 +32,7 @@ public final class GraceState {
     public void gameModeChanged(long nanos) { gameMode = nanos; }
     public void flightChanged(long nanos) { flight = nanos; }
     public void windowChanged(long nanos) { windowChange = nanos; }
+    public void rankChanged(long nanos) { rankChange = nanos; }
 
     public long windowChangeNanos() {
         return windowChange;
@@ -46,6 +48,7 @@ public final class GraceState {
         if (within(nowNanos, damage, grace.damageMillis())) return Reason.DAMAGE;
         if (within(nowNanos, gameMode, grace.gameModeMillis())) return Reason.GAME_MODE;
         if (within(nowNanos, flight, grace.flightMillis())) return Reason.FLIGHT;
+        if (within(nowNanos, rankChange, grace.rankChangeMillis())) return Reason.RANK_CHANGE;
         if (!Double.isNaN(tps) && tps < grace.lowTpsThreshold()) return Reason.LOW_TPS;
         return null;
     }

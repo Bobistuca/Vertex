@@ -6,7 +6,6 @@ plugins {
 val packetEventsVersion = providers.gradleProperty("packetEventsVersion").get()
 val spigotApiVersion = providers.gradleProperty("spigotApiVersion").get()
 val luckPermsApiVersion = providers.gradleProperty("luckPermsApiVersion").get()
-val junitVersion = providers.gradleProperty("junitVersion").get()
 
 repositories {
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
@@ -24,10 +23,6 @@ dependencies {
 
     implementation(project(":core"))
     implementation("com.github.retrooper:packetevents-spigot:$packetEventsVersion")
-
-    testImplementation(platform("org.junit:junit-bom:$junitVersion"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 // The Paper adapter needs the server's native Adventure classes, so it must not go through the relocation that

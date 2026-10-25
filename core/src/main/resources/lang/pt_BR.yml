@@ -142,6 +142,8 @@ label:
   health: "Saúde"
   capabilities: "Capacidades"
   never: "nunca"
+  exemption: "Isenção de checks"
+  staff: "Reconhecimento de equipe"
   unknown: "desconhecido"
 
 startup:

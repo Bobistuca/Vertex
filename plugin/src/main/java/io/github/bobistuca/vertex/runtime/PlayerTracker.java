@@ -118,6 +118,14 @@ public final class PlayerTracker {
         return e.reach;
     }
 
+    /** Forgets the buffered reach evidence (rank gained or lost). */
+    public void resetReach(UUID id) {
+        Entry e = entries.get(id);
+        if (e != null) {
+            e.reach = null;
+        }
+    }
+
     public int tracked() {
         return entries.size();
     }

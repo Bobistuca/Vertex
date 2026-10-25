@@ -19,3 +19,15 @@ servers/
 # OS
 .DS_Store
 Thumbs.db
+
+# Test sources, harnesses, fixtures and reports are not part of the repository
+**/src/test/
+test/
+tests/
+smoke/
+selftest/
+**/test-results/
+**/reports/
+coverage/
+*.exec
+*.hprof

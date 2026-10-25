@@ -31,10 +31,12 @@ public final class AlertDispatcher {
     private final AlertPipeline pipeline;
     private final Supplier<Messenger> messenger;
     private final PlayerTracker tracker;
+    private final io.github.bobistuca.vertex.core.staff.ExemptionRegistry exemptions;
 
     public AlertDispatcher(Plugin plugin, Supplier<MessageFactory> messages, Supplier<Settings> settings,
                            PreferenceStore preferences, AlertPipeline pipeline, Supplier<Messenger> messenger,
-                           PlayerTracker tracker) {
+                           PlayerTracker tracker,
+                           io.github.bobistuca.vertex.core.staff.ExemptionRegistry exemptions) {
         this.plugin = plugin;
         this.messages = messages;
         this.settings = settings;
@@ -42,15 +44,18 @@ public final class AlertDispatcher {
         this.pipeline = pipeline;
         this.messenger = messenger;
         this.tracker = tracker;
+        this.exemptions = exemptions;
     }
 
     public RecipientPolicy policy() {
         Settings.Recipients r = settings.get().alerts().recipients();
-        return new RecipientPolicy(r.operators(), r.permission(), r.gameModes());
+        return new RecipientPolicy(r.operators(), r.permission(), r.staff(), r.gameModes());
     }
 
     public RecipientView view(Player player) {
         return new RecipientView(player.isOp(), player.hasPermission("vertex.alerts"),
+                exemptions.get(player.getUniqueId()).map(e -> e.source()
+                        == io.github.bobistuca.vertex.core.staff.Exemption.Source.LUCKPERMS_GROUP).orElse(false),
                 player.getGameMode().name(), preferences.isOptedOut(player.getUniqueId()));
     }
 

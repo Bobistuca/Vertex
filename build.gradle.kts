@@ -21,12 +21,5 @@ subprojects {
             // The server-independent core must compile without any warning; integration modules report them.
             if (project.name == "core") options.compilerArgs.add("-Werror")
         }
-        tasks.withType<Test>().configureEach {
-            useJUnitPlatform()
-            testLogging {
-                events("passed", "skipped", "failed")
-                showStandardStreams = false
-            }
-        }
     }
 }

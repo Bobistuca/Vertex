@@ -1,5 +1,6 @@
 package io.github.bobistuca.vertex.core.config;
 
+import io.github.bobistuca.vertex.core.staff.StaffGroups;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -107,7 +108,8 @@ public final class SettingsLoader {
                 new Settings.ActionBar(ab.bool("enabled", false)),
                 new Settings.Sound(so.bool("enabled", false), so.text("name", "block.note_block.pling", 64),
                         so.decimal("volume", 0.6, 0.0, 2.0), so.decimal("pitch", 1.4, 0.5, 2.0)),
-                new Settings.Recipients(rc.bool("operators", true), rc.bool("permission", true), modes));
+                new Settings.Recipients(rc.bool("operators", true), rc.bool("permission", true),
+                        rc.bool("staff", true), modes));
 
         ConfigTree ci = t.section("client-info");
         Settings.ClientInfo clientInfo = new Settings.ClientInfo(
@@ -119,7 +121,7 @@ public final class SettingsLoader {
                 gr.longValue("join-ms", 5000, 0, 60_000), gr.longValue("teleport-ms", 2000, 0, 60_000),
                 gr.longValue("respawn-ms", 3000, 0, 60_000), gr.longValue("world-change-ms", 3000, 0, 60_000),
                 gr.longValue("velocity-ms", 1500, 0, 60_000), gr.longValue("damage-ms", 1000, 0, 60_000),
-                gr.longValue("game-mode-ms", 2000, 0, 60_000), gr.longValue("flight-ms", 2000, 0, 60_000),
+                gr.longValue("game-mode-ms", 2000, 0, 60_000), gr.longValue("flight-ms", 2000, 0, 60_000), gr.longValue("rank-change-ms", 5000, 0, 60_000),
                 gr.decimal("low-tps-threshold", 15.0, 1.0, 20.0));
 
         ConfigTree ck = t.section("checks");
@@ -174,6 +176,14 @@ public final class SettingsLoader {
                 au.textList("monitored-permissions", List.of(), 100, 128),
                 au.bool("notify-authorized-changes", false), au.bool("notify-no-change", false));
 
+        ConfigTree sf = t.section("staff");
+        ConfigTree lp = sf.section("luckperms");
+        Settings.Staff staff = new Settings.Staff(sf.bool("exempt-from-gameplay-checks", true), lp.bool("enabled", true),
+                lp.textList("groups", List.of("Mod", "Mod Plus", "Administrator", "Administrador", "Dono", "Owner"), 100, 64),
+                lp.hasKey("mappings") ? lp.textListMap("mappings", 100, 20, 64)
+                        : java.util.Map.of("Mod Plus", List.of("modplus", "mod_plus", "mod-plus")));
+        t.errors().addAll(StaffGroups.validate(staff));
+
         ConfigTree st = t.section("storage");
         Settings.Storage storage = new Settings.Storage(
                 st.integer("max-entries", 5000, 100, 1_000_000),
@@ -184,7 +194,7 @@ public final class SettingsLoader {
         if (!t.errors().isEmpty()) {
             throw new ConfigException(new ArrayList<>(t.errors()));
         }
-        return new Settings(language, appearance, alerts, clientInfo, grace, checks, audit, storage);
+        return new Settings(language, appearance, alerts, clientInfo, grace, checks, audit, staff, storage);
     }
 
     private static Set<UUID> uuids(ConfigTree t, String path, List<String> raw) {

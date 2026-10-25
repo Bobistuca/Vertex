@@ -75,6 +75,7 @@ public final class VertexRuntime {
     private AuditCoordinator audit;
     private AlertDispatcher dispatcher;
     private LuckPermsBridge luckPerms;
+    private StaffService staff;
     private BukkitTask snapshotTask;
     private BukkitTask maintenanceTask;
     private int maintenanceCounter;
@@ -114,7 +115,8 @@ public final class VertexRuntime {
         preferences = new PreferenceStore(dataDir.resolve("data").resolve("preferences.txt"), preferenceExecutor);
         preferences.load();
 
-        pipeline = new AlertPipeline(() -> settings.get(), store, System::nanoTime);
+        staff = new StaffService(() -> settings.get(), this::staffTransition);
+        pipeline = new AlertPipeline(() -> settings.get(), store, System::nanoTime, id -> staff.registry().isExempt(id));
         tracker = new PlayerTracker(() -> settings.get(), new PlayerTracker.TickValues() {
             @Override
             public double tps() {
@@ -126,7 +128,8 @@ public final class VertexRuntime {
                 return packets.ping(player);
             }
         });
-        engine = new AnalysisEngine(() -> settings.get(), tracker::context, pipeline::submit, System::currentTimeMillis);
+        engine = new AnalysisEngine(() -> settings.get(), tracker::context, pipeline::submit, System::currentTimeMillis,
+                staff.registry());
         analysis = new AnalysisThread(engine, 20_000);
         analysis.start();
 
@@ -139,17 +142,19 @@ public final class VertexRuntime {
 
         auditor = new AdminAuditor(() -> settings.get().audit());
         dispatcher = new AlertDispatcher(plugin, () -> messages, () -> settings.get(), preferences, pipeline,
-                () -> platform.adapters().messenger(), tracker);
+                () -> platform.adapters().messenger(), tracker, staff.registry());
         audit = new AuditCoordinator(plugin, auditor, () -> settings.get(), () -> messages, pipeline, dispatcher);
 
         Bukkit.getPluginManager().registerEvents(new BukkitListeners(this), plugin);
         startLuckPerms();
+        log.info("Staff recognition: " + staff.integrationStatus());
 
         long nanos = System.nanoTime();
         for (Player p : Bukkit.getOnlinePlayers()) {
             tracker.join(p, nanos - 60_000_000_000L); // already online: the join grace has long passed
         }
         audit.baselineAll(nanos, System.currentTimeMillis());
+        staff.refreshAll();
 
         snapshotTask = Bukkit.getScheduler().runTaskTimer(plugin, this::snapshotTick, 1L, 2L);
         maintenanceTask = Bukkit.getScheduler().runTaskTimer(plugin, this::maintenanceTick, 5L, 5L);
@@ -184,10 +189,12 @@ public final class VertexRuntime {
             return;
         }
         try {
-            luckPerms = new LuckPermsBridge(plugin, (id, groups) -> audit.onGroupsChanged(id, groups));
+            luckPerms = new LuckPermsBridge(plugin, (id, groups) -> audit.onGroupsChanged(id, groups),
+                    id -> staff.refresh(id));
             if (!luckPerms.start()) {
                 luckPerms = null;
             }
+            staff.luckPerms(luckPerms);
         } catch (LinkageError e) {
             luckPerms = null;
         }
@@ -210,6 +217,7 @@ public final class VertexRuntime {
     private void maintenanceTick() {
         long now = System.nanoTime();
         long wall = System.currentTimeMillis();
+        staff.refreshSome(2);
         pipeline.drainDue().forEach(dispatcher::deliver);
         if (settings.get().alerts().actionBar().enabled()) {
             pipeline.drainLive().forEach(dispatcher::actionBar);
@@ -247,9 +255,10 @@ public final class VertexRuntime {
     public void playerJoined(Player player) {
         long now = System.nanoTime();
         tracker.join(player, now);
+        staff.refresh(player);
         audit.baselinePlayer(player);
         if (luckPerms != null) {
-            var groups = luckPerms.groupsOf(player.getUniqueId());
+            var groups = luckPerms.directGroupsOf(player.getUniqueId());
             if (groups != null) {
                 audit.baselineGroups(player.getUniqueId(), groups);
             }
@@ -268,6 +277,7 @@ public final class VertexRuntime {
         pipeline.clearPlayer(id).forEach(dispatcher::deliver);
         pipeline.forgetRecipient(id);
         tracker.remove(id);
+        staff.forget(id);
         clientInfo.remove(id);
         audit.forget(id);
         counters.remove(id);
@@ -295,6 +305,29 @@ public final class VertexRuntime {
                 target.getType().name()).orElse(null);
         if (finding != null) {
             engine.record(id, attacker.getName(), finding, "reach:" + target.getEntityId() + ":" + (now / 50_000_000L));
+        }
+    }
+
+    /**
+     * Server thread. A rank was gained: pending gameplay alerts and every detection buffer are discarded (stored
+     * evidence stays). A rank was lost or expired: monitoring restarts with fresh samples and a grace period.
+     */
+    private void staffTransition(UUID id, io.github.bobistuca.vertex.core.staff.ExemptionRegistry.Transition t) {
+        switch (t) {
+            case GAINED -> {
+                engine.forget(id);
+                pipeline.discardPlayer(id);
+                tracker.resetReach(id);
+            }
+            case LOST -> {
+                engine.forget(id);
+                tracker.resetReach(id);
+                io.github.bobistuca.vertex.core.checks.GraceState grace = tracker.grace(id);
+                if (grace != null) {
+                    grace.rankChanged(System.nanoTime());
+                }
+            }
+            default -> { }
         }
     }
 
@@ -329,6 +362,7 @@ public final class VertexRuntime {
             return new SettingsHolder.ReloadResult(false, problems);
         }
         messages = next;
+        staff.refreshAll(); // the staff section may have changed
         return result;
     }
 
@@ -407,9 +441,10 @@ public final class VertexRuntime {
     public PacketBridge packets() { return packets; }
     public PlatformDetector.Detected platform() { return platform; }
     public AuditCoordinator audit() { return audit; }
+    public StaffService staff() { return staff; }
     public AdminAuditor auditor() { return auditor; }
     public ClientReport lastClientReport(UUID id) { return lastClient.get(id); }
-    public boolean luckPermsActive() { return luckPerms != null; }
+    public boolean luckPermsActive() { return staff != null && staff.luckPermsActive(); }
     public boolean running() { return running; }
 
     public ServerMetrics metrics() {

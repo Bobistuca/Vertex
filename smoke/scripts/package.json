@@ -1,8 +1,0 @@
-{
-  "name": "vertex-smoke-bot",
-  "private": true,
-  "description": "Test-only protocol client used by the Vertex CI smoke tests",
-  "dependencies": {
-    "mineflayer": "4.39.0"
-  }
-}

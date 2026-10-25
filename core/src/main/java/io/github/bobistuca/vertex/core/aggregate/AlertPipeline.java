@@ -34,6 +34,7 @@ public final class AlertPipeline {
     private final Supplier<Settings> settings;
     private final EvidenceStore store;
     private final LongSupplier nanoClock;
+    private final java.util.function.Predicate<UUID> exempt;
     private final Object lock = new Object();
 
     private AlertAggregator aggregator;
@@ -49,15 +50,22 @@ public final class AlertPipeline {
     private final AtomicLong duplicates = new AtomicLong();
     private final AtomicLong suppressed = new AtomicLong();
     private final AtomicLong delivered = new AtomicLong();
+    private final AtomicLong exemptDropped = new AtomicLong();
 
-    public AlertPipeline(Supplier<Settings> settings, EvidenceStore store, LongSupplier nanoClock) {
+    public AlertPipeline(Supplier<Settings> settings, EvidenceStore store, LongSupplier nanoClock,
+                         java.util.function.Predicate<UUID> exempt) {
         this.settings = settings;
         this.store = store;
         this.nanoClock = nanoClock;
+        this.exempt = exempt;
     }
 
     /** Thread-safe. Returns false when the incident was a duplicate observation and was not counted. */
     public boolean submit(Detection detection) {
+        if (exempt.test(detection.playerId())) {
+            exemptDropped.incrementAndGet();
+            return false; // administrative staff never accumulate violations
+        }
         submitted.incrementAndGet();
         AlertAggregator.Offer offer;
         synchronized (lock) {
@@ -105,6 +113,23 @@ public final class AlertPipeline {
             removed = aggregatorFor().clearPlayer(player);
         }
         return process(removed);
+    }
+
+    /**
+     * Discards the pending (not yet delivered) gameplay alerts and live counters of a player, for example when the
+     * player gains an exempt rank. Evidence that was already persisted is kept.
+     */
+    public void discardPlayer(UUID player) {
+        synchronized (lock) {
+            aggregatorFor().clearPlayer(player);
+        }
+        live.removeIf(u -> {
+            boolean mine = u.playerId().equals(player);
+            if (mine) {
+                liveSize.decrementAndGet();
+            }
+            return mine;
+        });
     }
 
     public List<LiveUpdate> drainLive() {
@@ -238,6 +263,7 @@ public final class AlertPipeline {
     public long submitted() { return submitted.get(); }
     public long duplicates() { return duplicates.get(); }
     public long suppressed() { return suppressed.get(); }
+    public long exemptDropped() { return exemptDropped.get(); }
     public long delivered() { return delivered.get(); }
 
     public int openGroups() {

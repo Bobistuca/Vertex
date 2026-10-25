@@ -31,6 +31,7 @@ alerts:
   recipients:
     operators: true             # server operators, regardless of game mode
     permission: true            # players with vertex.alerts
+    staff: true                 # members of the administrative groups below (they still can switch alerts off)
     game-modes: [CREATIVE]      # game modes that may receive alerts (add SPECTATOR if wanted); never grants commands
 
 client-info:
@@ -48,6 +49,7 @@ grace:
   damage-ms: 1000
   game-mode-ms: 2000
   flight-ms: 2000
+  rank-change-ms: 5000          # after an exempt rank is removed, checks restart with fresh samples after this long
   low-tps-threshold: 15.0       # checks that depend on timing pause below this TPS (when TPS is known)
 
 checks:
@@ -125,6 +127,21 @@ audit:
   monitored-permissions: []     # permission nodes watched when no permission plugin integration is available
   notify-authorized-changes: false
   notify-no-change: false
+
+# Administrative staff are recognized from LuckPerms groups (never from prefixes, nicknames, tags or client data) and
+# bypass every gameplay and packet-cheat check: no violations, counters, aggregated alerts or suspect entries.
+# Auditing of OP, group, tag and game-mode changes is separate and keeps running. Recognizing a rank grants no
+# permission, no OP and no command access. Players with the explicit permission vertex.bypass.gameplay (default:
+# nobody, not even operators) are exempt as well. LuckPerms membership includes inherited groups in the player's
+# active server/world contexts and temporary memberships, not only the primary group.
+staff:
+  exempt-from-gameplay-checks: true   # master switch for the group and permission bypass
+  luckperms:
+    enabled: true
+    # Ranks. Use the real LuckPerms group id (matched exactly, case-insensitive) or a label defined in "mappings".
+    groups: [Mod, Mod Plus, Administrator, Administrador, Dono, Owner]
+    mappings:
+      "Mod Plus": [modplus, mod_plus, mod-plus]   # a label can map to several candidate ids; only existing groups match
 
 storage:
   max-entries: 5000

@@ -7,6 +7,7 @@ import io.github.bobistuca.vertex.core.checks.PlayerSnapshot;
 import io.github.bobistuca.vertex.core.checks.ProtocolValidator;
 import io.github.bobistuca.vertex.core.config.Settings;
 import io.github.bobistuca.vertex.core.model.Detection;
+import io.github.bobistuca.vertex.core.staff.ExemptionRegistry;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -31,16 +32,18 @@ public final class AnalysisEngine {
     private final Function<UUID, PlayerContext> contexts;
     private final Consumer<Detection> sink;
     private final LongSupplier wallClock;
+    private final ExemptionRegistry exemptions;
     private final Map<UUID, PlayerState> states = new ConcurrentHashMap<>();
     private final AtomicLong failures = new AtomicLong();
     private final AtomicLong processed = new AtomicLong();
 
     public AnalysisEngine(Supplier<Settings> settings, Function<UUID, PlayerContext> contexts,
-                          Consumer<Detection> sink, LongSupplier wallClock) {
+                          Consumer<Detection> sink, LongSupplier wallClock, ExemptionRegistry exemptions) {
         this.settings = settings;
         this.contexts = contexts;
         this.sink = sink;
         this.wallClock = wallClock;
+        this.exemptions = exemptions;
     }
 
     public long failures() {
@@ -70,6 +73,9 @@ public final class AnalysisEngine {
      * server-side entity state). Thread safe; the incident counters feed the inspect command.
      */
     public void record(UUID id, String name, Finding finding, String dedupKey) {
+        if (exemptions.isExempt(id)) {
+            return;
+        }
         PlayerState state = stateFor(id);
         long now = wallClock.getAsLong();
         state.incidents.computeIfAbsent(finding.checkId(), k -> new AtomicLong()).incrementAndGet();
@@ -78,7 +84,15 @@ public final class AnalysisEngine {
                 finding.reason(), finding.measurements(), now, dedupKey));
     }
 
+    /** Drops every detection buffer of a player (rank gained or lost). Historical evidence is untouched. */
+    public void forget(UUID id) {
+        states.remove(id);
+    }
+
     public Optional<PlayerReport> report(UUID id) {
+        if (exemptions.isExempt(id)) {
+            return Optional.empty();
+        }
         PlayerState state = states.get(id);
         if (state == null) {
             return Optional.empty();
@@ -107,6 +121,10 @@ public final class AnalysisEngine {
     private void handle(Observation o) {
         if (o instanceof Observation.Quit) {
             states.remove(o.playerId());
+            return;
+        }
+        if (exemptions.isExempt(o.playerId())) {
+            states.remove(o.playerId()); // staff are never judged and keep no detection buffers
             return;
         }
         PlayerContext ctx = contexts.apply(o.playerId());

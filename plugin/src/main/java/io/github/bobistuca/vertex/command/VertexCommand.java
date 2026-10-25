@@ -144,6 +144,8 @@ public final class VertexCommand implements TabExecutor {
             GraceState.Reason reason = grace.active(System.nanoTime(), runtime.settings().grace(), ctx.snapshot().tps());
             line(sender, "label.capabilities", "grace=" + (reason == null ? "none" : reason.name()));
         }
+        var exemption = runtime.staff().registry().get(id);
+        line(sender, "label.exemption", exemption.map(e -> e.source() + ": " + e.detail()).orElse("none"));
         PlayerReport report = runtime.engine().report(id).orElse(null);
         if (report == null) {
             reply(sender, c.render("command.inspect.none"));
@@ -223,6 +225,7 @@ public final class VertexCommand implements TabExecutor {
         Settings.Recipients r = s.alerts().recipients();
         line(sender, "label.recipients", "operators=" + r.operators() + " permission=" + r.permission() + " gameModes=" + r.gameModes());
         line(sender, "label.language", s.language());
+        line(sender, "label.staff", runtime.staff().integrationStatus());
         line(sender, "label.capabilities", "paper=" + caps.paper() + " nativeAdventure=" + caps.nativeAdventure()
                 + " spigotApi=" + caps.spigotPlayerApi() + " bungeeChat=" + caps.bungeeChat() + " serverTps=" + caps.serverTps());
         for (CheckCatalog.Entry e : CheckCatalog.status(s, caps)) {

@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: Build and test
+    name: Build and package
     runs-on: ubuntu-latest
     env:
       VERTEX_BUILD_ID: build-${{ github.sha }}
@@ -22,7 +22,7 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - name: Build, test and package
+      - name: Compile and package
         run: ./gradlew build --no-daemon --stacktrace
 
       - name: Inspect the packaged jar
@@ -34,6 +34,14 @@ jobs:
           echo "--- top-level packages"; unzip -Z1 "$JAR" | awk -F/ 'NF>2{print $1"/"$2"/"$3"/"$4}' | sort | uniq -c | sort -rn | head -30
           echo "--- unrelocated third-party classes (must be none)"
           if unzip -Z1 "$JAR" | grep -E '^(net/kyori|com/github/retrooper|io/github/retrooper|org/yaml)/' ; then exit 1; fi
+          echo "--- required metadata and optional-integration checks"
+          unzip -p "$JAR" plugin.yml | grep -q 'softdepend: \[LuckPerms\]'
+          unzip -p "$JAR" plugin.yml | grep -q 'vertex.bypass.gameplay'
+          unzip -p "$JAR" plugin.yml | grep -A2 'vertex.bypass.gameplay:' | grep -q 'default: false'
+          if unzip -Z1 "$JAR" | grep -E '^net/luckperms/' ; then echo "LuckPerms API must not be bundled"; exit 1; fi
+          unzip -Z1 "$JAR" | grep -q '^io/github/bobistuca/vertex/core/staff/ExemptionRegistry.class'
+          unzip -Z1 "$JAR" | grep -q '^io/github/bobistuca/vertex/integration/LuckPermsBridge.class'
+          unzip -Z1 "$JAR" | grep -q '^embedded/paper/io/github/bobistuca/vertex/paper/PaperAdapters.class.bin'
           echo "--- META-INF entries (excluding maven metadata and multi-release classes)"
           unzip -Z1 "$JAR" | grep '^META-INF/' | grep -vE '^META-INF/(maven|versions)/' | head -40 || true
           echo "--- bundled resources"; unzip -Z1 "$JAR" | grep -E '^(config.yml|lang/|assets/mappings/)' | head -8

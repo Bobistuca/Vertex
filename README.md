@@ -69,7 +69,7 @@ Verified facts (see [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for sources a
 | Spigot | verified on 26.1.2 — BuildTools 201; Spigot build 4632; live client packets observed | verified on 26.2 — BuildTools 201; Spigot build 4648 | verified on 26.3 — BuildTools 201; Spigot build 4663 |
 | Paper | verified on 26.1.2 — Paper 74 (STABLE); live client packets observed | verified on 26.2 — Paper 134 (STABLE) | verified on 26.3 — Paper 222 (STABLE) |
 
-*verified* = the startup and functionality smoke test passed on that exact server build (Temurin Java 
+*verified* (at commit `06bdc6e`, before the staff-exemption feature was added) = the startup and functionality smoke test passed on that exact server build (Temurin Java 
 25.0.4 on the Linux CI runner): plugin load, packet-listener initialization, commands, localized messages, 
 aggregation, safe reload, administrative auditing, evidence persistence and clean shutdown. Minecraft 26.1 
 was tested with the 26.1.2 builds; 26.1 and 26.1.1 share the same Spigot/CraftBukkit build but were not 
@@ -79,7 +79,7 @@ listener) was only available for 26.1.2; on 26.2 and 26.3 the packet listener is
 and run, but no client traffic was observed. Not covered by the smoke tests: the live action-bar counter, 
 alert sounds, tab completion, the LuckPerms integration and non-Linux hosts.
 
-Exact builds, the reported server version strings and every check are recorded in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+The smoke-test harness used for that run is not part of the repository any more, and the current head has not been re-run on live servers. Exact builds, the reported server version strings and every check are recorded in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## What Vertex checks
 
@@ -146,7 +146,7 @@ listener counts once. Totals stay exact in the evidence history even when the ch
 | `/vertex status` | `vertex.command.status` | Health, active checks, platform capabilities, dependency status |
 | `/vertex reload` | `vertex.command.reload` | Validate and reload the configuration |
 
-Also: `vertex.alerts` (receive alerts), `vertex.command.*` and `vertex.*`. All default to operators.
+Also: `vertex.alerts` (receive alerts), `vertex.bypass.gameplay` (explicit exemption, default `false`), `vertex.command.*` and `vertex.*`. All default to operators.
 Tab completion only offers what you may use.
 
 ## Configuration and localization
@@ -165,6 +165,30 @@ or fake log lines. Templates cannot create click events.
 
 Evidence history and personal preferences are stored locally in `plugins/Vertex/data/` with asynchronous, bounded
 writes and configurable retention (entries, bytes, days). Vertex has no telemetry and makes no network requests.
+
+## Administrative staff (LuckPerms)
+
+Vertex recognizes administrative ranks through the **official LuckPerms API** (compile-only, optional; the LuckPerms
+plugin is never bundled and Vertex never changes stored groups or assigns ranks). The ranks are configured in
+`staff.luckperms.groups` — default: Mod, Mod Plus, Administrator, Administrador, Dono, Owner. Entries are real group
+ids (exact, case-insensitive match; no substring matching) or labels defined in `staff.luckperms.mappings`, so
+"Mod Plus" maps to whichever of `modplus`, `mod_plus`, `mod-plus` exists.
+
+Membership is resolved from LuckPerms' effective data: direct **and inherited** groups in the player's **active
+server/world contexts**, excluding expired **temporary** memberships — not only the primary group. Chat prefixes,
+nicknames, scoreboard tags and client-supplied data are never used. OP is not needed and not implied.
+
+Members of those groups, and players with the explicit permission `vertex.bypass.gameplay` (default: nobody, not
+even operators), bypass **every** gameplay and packet check through one central registry: no violations, no counters,
+no aggregated alerts, no entry in suspect state. They are still eligible alert recipients (`alerts.recipients.staff`)
+and can switch alerts off. Recognition grants no OP, wildcard, Creative or command permission.
+
+When a rank is gained, pending gameplay alerts and detection buffers are discarded (stored evidence is kept). When
+it is removed or expires, monitoring restarts with fresh samples after `grace.rank-change-ms`. State is cached and
+refreshed on join, on LuckPerms data recalculation (group, inheritance, context and temporary-membership changes),
+on `/vertex reload`, and by a slow round-robin safety net for permission changes that raise no event. Without
+LuckPerms the group integration is inactive (reported by `/vertex status`) and the permission bypass still works.
+Auditing of OP, group, tag, team and game-mode changes is independent of this exemption.
 
 ## Administrative auditing
 
@@ -203,7 +227,7 @@ software, so Vertex always reports **injection status: not verifiable from serve
 - Limits come from server-authoritative state: the movement-speed attribute (already including potion and sprint
   modifiers), ability flight speed, jump boost, levitation, slow falling, vehicles, gliding, riptide,
   climbables/liquids/webs/honey/scaffolding, the entity interaction range attribute and latency.
-- Creative flight and Spectator are not accused for having those abilities; operators are not exempt from every
+- Administrative staff (above) are not checked at all; Creative flight and Spectator are not accused for having those abilities; operators are not exempt from every
   check — only the exemptions that relate to the actual ability apply.
 - Latency, TPS and MSPT: Paper exposes TPS/MSPT; elsewhere Vertex reports a scheduler-derived tick rate (labelled as
   such) and MSPT as unknown. Unavailable values are shown as unknown, never invented.
@@ -213,22 +237,15 @@ software, so Vertex always reports **injection status: not verifiable from serve
 - Minecraft 26.2 and 26.3 have no public protocol test client yet, so the live-packet test (a real client sending
   packets) is limited to 26.1.x; see the matrix above for exactly what was verified.
 
-## Building and testing
+## Building
 
 ```bash
-./gradlew build                 # compiles, runs the unit tests, produces plugin/build/libs/Vertex.jar
-./gradlew :core:test            # server-independent tests only
+./gradlew build      # compiles every module and produces plugin/build/libs/Vertex.jar
 ```
 
-Requirements: JDK 25. The Gradle wrapper is included (Gradle 9.8.2, Kotlin DSL). Tests cover aggregation (`2x`),
-duplicate observations, recipient rules and command access, auditing (baselines, no-ops, unknown actors), client
-information (including hostile brands), auto-click timing, movement exemptions and grace, configuration reload,
-storage bounds, localization parity and platform adapter selection.
-
-Smoke tests on real servers run in GitHub Actions (`.github/workflows/smoke.yml`, started manually):
-CraftBukkit and Spigot are built with Spigot's BuildTools, Paper comes from the PaperMC download API, and a
-scripted session checks plugin loading, packet-listener initialization, commands, permissions, messages,
-aggregation, reload and clean shutdown. See [docs/TESTING.md](docs/TESTING.md) to reproduce them locally.
+Requirements: JDK 25. The Gradle wrapper is included (Gradle 9.8.2, Kotlin DSL). The repository contains no test
+sources or test harnesses; the `Build` workflow compiles the project, packages `Vertex.jar`, verifies that the jar
+contains no unrelocated third-party classes and publishes the jar as the `Vertex` workflow artifact.
 
 ## License
 

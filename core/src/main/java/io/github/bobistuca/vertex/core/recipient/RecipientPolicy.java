@@ -10,11 +10,13 @@ import java.util.Set;
 public final class RecipientPolicy {
     private final boolean operators;
     private final boolean permission;
+    private final boolean staff;
     private final Set<String> gameModes;
 
-    public RecipientPolicy(boolean operators, boolean permission, Set<String> gameModes) {
+    public RecipientPolicy(boolean operators, boolean permission, boolean staff, Set<String> gameModes) {
         this.operators = operators;
         this.permission = permission;
+        this.staff = staff;
         this.gameModes = Set.copyOf(gameModes.stream().map(m -> m.toUpperCase(Locale.ROOT)).toList());
     }
 
@@ -24,6 +26,9 @@ public final class RecipientPolicy {
             return true;
         }
         if (permission && view.hasAlertPermission()) {
+            return true;
+        }
+        if (staff && view.administrativeStaff()) {
             return true;
         }
         return view.gameMode() != null && gameModes.contains(view.gameMode().toUpperCase(Locale.ROOT));

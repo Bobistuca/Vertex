@@ -1,6 +1,6 @@
 # Compatibility and verification record
 
-Generated from the `smoke-results` branch written by the Smoke workflow.
+Historical record of the smoke test run that verified commit `06bdc6e`. The harness that produced it (a CI-only helper plugin and scripts) was later removed from the repository, so this run can no longer be reproduced from the current tree, and the current head (with the LuckPerms staff exemption) has not been re-run on live servers.
 
 | Server | 26.1 | 26.2 | 26.3 |
 |---|---|---|---|

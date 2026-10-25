@@ -17,6 +17,9 @@ permissions:
   vertex.alerts:
     description: Receive private Vertex alerts
     default: op
+  vertex.bypass.gameplay:
+    description: Explicit exemption from the gameplay and packet checks (grants nothing else)
+    default: false
   vertex.command.alerts:
     description: Toggle your personal alerts
     default: op

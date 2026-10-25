@@ -28,6 +28,10 @@ public final class ConfigTree {
         return errors;
     }
 
+    public boolean hasKey(String key) {
+        return root.containsKey(key);
+    }
+
     public ConfigTree section(String key) {
         Object value = root.get(key);
         if (value == null) {
@@ -149,5 +153,35 @@ public final class ConfigTree {
         }
         errors.add(prefix + key + ": expected a list");
         return fallback;
+    }
+
+    /** Reads a section whose values are lists of short text (for example label -> candidate group ids). */
+    public java.util.Map<String, List<String>> textListMap(String key, int maxKeys, int maxItems, int maxLength) {
+        Object value = root.get(key);
+        java.util.Map<String, List<String>> out = new java.util.LinkedHashMap<>();
+        if (value == null) {
+            return out;
+        }
+        if (!(value instanceof Map<?, ?> map) || map.size() > maxKeys) {
+            errors.add(prefix + key + ": expected a section with at most " + maxKeys + " entries");
+            return out;
+        }
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            String name = String.valueOf(entry.getKey());
+            if (!(entry.getValue() instanceof List<?> list) || list.size() > maxItems) {
+                errors.add(prefix + key + "." + name + ": expected a list of at most " + maxItems + " entries");
+                continue;
+            }
+            List<String> items = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof String text && !text.isBlank() && text.length() <= maxLength) {
+                    items.add(text);
+                } else {
+                    errors.add(prefix + key + "." + name + ": entries must be short text values");
+                }
+            }
+            out.put(name, items);
+        }
+        return out;
     }
 }
