@@ -2,9 +2,7 @@ package io.github.bobistuca.vertex.runtime;
 
 import io.github.bobistuca.vertex.core.aggregate.AlertPipeline;
 import io.github.bobistuca.vertex.core.audit.AdminAuditor;
-import io.github.bobistuca.vertex.core.checks.Finding;
 import io.github.bobistuca.vertex.core.checks.GraceState;
-import io.github.bobistuca.vertex.core.checks.ReachEvaluator;
 import io.github.bobistuca.vertex.core.client.ClientInfoCollector;
 import io.github.bobistuca.vertex.core.client.ClientReport;
 import io.github.bobistuca.vertex.core.client.Provenance;
@@ -76,8 +74,11 @@ public final class VertexRuntime {
     private AlertDispatcher dispatcher;
     private LuckPermsBridge luckPerms;
     private StaffService staff;
+    private ReachService reach;
+    private io.github.bobistuca.vertex.integration.ViaBridge via;
     private BukkitTask snapshotTask;
     private BukkitTask maintenanceTask;
+    private BukkitTask reachTask;
     private int maintenanceCounter;
     private boolean running;
 
@@ -132,11 +133,12 @@ public final class VertexRuntime {
                 staff.registry());
         analysis = new AnalysisThread(engine, 20_000);
         analysis.start();
+        reach = new ReachService(() -> settings.get(), tracker, engine);
 
         clientInfo = new ClientInfoCollector(settings.get().clientInfo().timeoutMillis(),
                 settings.get().clientInfo().maxChannels());
         packets.start(analysis::submit, counters,
-                (id, payload, nanos) -> clientInfo.brandPayload(id, payload, nanos));
+                (id, payload, nanos) -> clientInfo.brandPayload(id, payload, nanos), reach::enqueue);
         platform = new PlatformDetector(plugin.getClass().getClassLoader(), log)
                 .detect(tickMonitor, packets.state() == PacketBridge.State.RUNNING);
 
@@ -147,6 +149,7 @@ public final class VertexRuntime {
 
         Bukkit.getPluginManager().registerEvents(new BukkitListeners(this), plugin);
         startLuckPerms();
+        via = io.github.bobistuca.vertex.integration.ViaBridge.create();
         log.info("Staff recognition: " + staff.integrationStatus());
 
         long nanos = System.nanoTime();
@@ -157,6 +160,7 @@ public final class VertexRuntime {
         staff.refreshAll();
 
         snapshotTask = Bukkit.getScheduler().runTaskTimer(plugin, this::snapshotTick, 1L, 2L);
+        reachTask = Bukkit.getScheduler().runTaskTimer(plugin, reach::drain, 1L, 1L);
         maintenanceTask = Bukkit.getScheduler().runTaskTimer(plugin, this::maintenanceTick, 5L, 5L);
         running = true;
         logStartup();
@@ -166,6 +170,7 @@ public final class VertexRuntime {
         running = false;
         if (snapshotTask != null) snapshotTask.cancel();
         if (maintenanceTask != null) maintenanceTask.cancel();
+        if (reachTask != null) reachTask.cancel();
         if (luckPerms != null) luckPerms.close();
         packets.stop();
         if (analysis != null) analysis.stop();
@@ -264,8 +269,11 @@ public final class VertexRuntime {
             }
         }
         clientInfo.begin(player.getUniqueId(), player.getName(), now);
+        var original = via.clientProtocol(player.getUniqueId());
         ClientVersion version = packets.clientVersion(player);
-        if (version != null) {
+        if (original != null) {
+            clientInfo.protocol(player.getUniqueId(), original.protocol(), original.name() + " (via ViaVersion)");
+        } else if (version != null) {
             clientInfo.protocol(player.getUniqueId(), version.getProtocolVersion(), version.getReleaseName());
         }
     }
@@ -278,6 +286,7 @@ public final class VertexRuntime {
         pipeline.forgetRecipient(id);
         tracker.remove(id);
         staff.forget(id);
+        reach.forget(id);
         clientInfo.remove(id);
         audit.forget(id);
         counters.remove(id);
@@ -285,27 +294,6 @@ public final class VertexRuntime {
 
     public void channelRegistered(UUID id, String channel) {
         clientInfo.channel(id, channel);
-    }
-
-    /** Reach needs server-side entity state, so it is evaluated on the server thread from the damage event. */
-    public void reachSample(Player attacker, org.bukkit.entity.Entity target, double distance, double range) {
-        UUID id = attacker.getUniqueId();
-        GraceState grace = tracker.grace(id);
-        var ctx = tracker.context(id);
-        ReachEvaluator evaluator = tracker.reach(id);
-        Settings cfg = settings.get();
-        if (!cfg.checks().reach().enabled() || grace == null || ctx == null || evaluator == null) {
-            return;
-        }
-        long now = System.nanoTime();
-        if (grace.active(now, cfg.grace(), ctx.snapshot().tps()) != null || ctx.snapshot().spectator()) {
-            return;
-        }
-        Finding finding = evaluator.evaluate(distance, range, ctx.snapshot().creative(), ctx.snapshot().pingMillis(),
-                target.getType().name()).orElse(null);
-        if (finding != null) {
-            engine.record(id, attacker.getName(), finding, "reach:" + target.getEntityId() + ":" + (now / 50_000_000L));
-        }
     }
 
     /**
@@ -442,6 +430,8 @@ public final class VertexRuntime {
     public PlatformDetector.Detected platform() { return platform; }
     public AuditCoordinator audit() { return audit; }
     public StaffService staff() { return staff; }
+    public ReachService reach() { return reach; }
+    public io.github.bobistuca.vertex.integration.ViaBridge via() { return via; }
     public AdminAuditor auditor() { return auditor; }
     public ClientReport lastClientReport(UUID id) { return lastClient.get(id); }
     public boolean luckPermsActive() { return staff != null && staff.luckPermsActive(); }

@@ -17,6 +17,8 @@ package io.github.bobistuca.vertex.core.checks;
  * @param tps              scheduler-derived or server-reported ticks per second, {@code NaN} if unknown
  * @param pingMillis       reported latency, {@code -1} if unknown
  * @param jitterMillis     recent latency deviation, {@code NaN} if unknown
+ * @param sprinting        server-known sprint state
+ * @param slipperyBelow    ice, packed ice, blue ice or similar low-friction block below the feet
  */
 public record PlayerSnapshot(
         String gameMode,
@@ -39,12 +41,14 @@ public record PlayerSnapshot(
         boolean containerOpen,
         double tps,
         int pingMillis,
-        double jitterMillis) {
+        double jitterMillis,
+        boolean sprinting,
+        boolean slipperyBelow) {
 
     /** A neutral survival snapshot, useful for tests and as the pre-initialization value. */
     public static PlayerSnapshot survivalDefaults() {
         return new PlayerSnapshot("SURVIVAL", 0, false, false, false, false, false, false, false,
-                0.1, 0.05f, 0, false, false, false, true, 0.0, false, Double.NaN, -1, Double.NaN);
+                0.1, 0.05f, 0, false, false, false, true, 0.0, false, Double.NaN, -1, Double.NaN, false, false);
     }
 
     public boolean spectator() {

@@ -13,6 +13,8 @@ public final class CommandAccess {
         HELP(null),
         ALERTS("vertex.command.alerts"),
         INSPECT("vertex.command.inspect"),
+        DIAGNOSE("vertex.command.diagnose"),
+        TESTMODE("vertex.command.testmode"),
         HISTORY("vertex.command.history"),
         STATUS("vertex.command.status"),
         RELOAD("vertex.command.reload");

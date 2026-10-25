@@ -1,17 +1,17 @@
 name: Vertex
 main: io.github.bobistuca.vertex.VertexPlugin
 version: ${version}
-api-version: '26.1'
+api-version: '1.21'
 description: A Minecraft anti-cheat for Bukkit, Spigot, and Paper featuring packet analysis, aggregated staff alerts, and administrative auditing, without automatic punishments.
 author: Bobistuca
 website: https://github.com/Bobistuca/Vertex
-softdepend: [LuckPerms]
+softdepend: [LuckPerms, ViaVersion, ViaBackwards]
 
 commands:
   vertex:
     description: Vertex anti-cheat commands
     aliases: [vx]
-    usage: /<command> [help|alerts|inspect|history|status|reload]
+    usage: /<command> [help|alerts|inspect|diagnose|testmode|history|status|reload]
 
 permissions:
   vertex.alerts:
@@ -25,6 +25,12 @@ permissions:
     default: op
   vertex.command.inspect:
     description: Inspect a player's detection state
+    default: op
+  vertex.command.diagnose:
+    description: Explain what Vertex sees and why each check is or is not evaluating for a player
+    default: op
+  vertex.command.testmode:
+    description: Force detection on for one player for a limited time, without changing their rank or permissions
     default: op
   vertex.command.history:
     description: View recent evidence history
@@ -41,7 +47,13 @@ permissions:
     children:
       vertex.command.alerts: true
       vertex.command.inspect: true
-      vertex.command.history: true
+      vertex.command.diagnose:
+    description: Explain what Vertex sees and why each check is or is not evaluating for a player
+    default: op
+  vertex.command.testmode:
+    description: Force detection on for one player for a limited time, without changing their rank or permissions
+    default: op
+  vertex.command.history: true
       vertex.command.status: true
       vertex.command.reload: true
   vertex.*:

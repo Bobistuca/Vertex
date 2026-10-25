@@ -28,6 +28,7 @@ public final class CheckCatalog {
             new Def(PacketRateTracker.FLOOD_CHECK_ID, true, false, c -> c.packetRate().enabled()),
             new Def(ClickAnalyzer.CHECK_ID, true, false, c -> c.autoClicker().enabled()),
             new Def(MovementAnalyzer.SPEED_ID, true, true, c -> c.movement().enabled()),
+            new Def(MovementAnalyzer.SUSTAINED_ID, true, true, c -> c.movement().enabled()),
             new Def(MovementAnalyzer.ASCENT_ID, true, true, c -> c.movement().enabled()),
             new Def(MovementAnalyzer.HOVER_ID, true, true, c -> c.movement().enabled()),
             new Def(ReachEvaluator.CHECK_ID, false, true, c -> c.reach().enabled()));

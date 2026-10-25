@@ -6,10 +6,14 @@ plugins {
 val packetEventsVersion = providers.gradleProperty("packetEventsVersion").get()
 val spigotApiVersion = providers.gradleProperty("spigotApiVersion").get()
 val luckPermsApiVersion = providers.gradleProperty("luckPermsApiVersion").get()
+val viaVersionApiVersion = providers.gradleProperty("viaVersionApiVersion").get()
 
 repositories {
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
         content { includeGroup("org.spigotmc") }
+    }
+    maven("https://repo.viaversion.com") {
+        content { includeGroup("com.viaversion") }
     }
     maven("https://repo.codemc.io/repository/maven-releases/") {
         content { includeGroup("com.github.retrooper") }
@@ -20,6 +24,8 @@ dependencies {
     // Oldest verified API baseline. Spigot-only and Paper-only APIs live behind runtime capability checks.
     compileOnly("org.spigotmc:spigot-api:$spigotApiVersion")
     compileOnly("net.luckperms:api:$luckPermsApiVersion")
+    // Optional at runtime and never bundled; only reached when the ViaVersion plugin is enabled.
+    compileOnly("com.viaversion:viaversion-api:$viaVersionApiVersion")
 
     implementation(project(":core"))
     implementation("com.github.retrooper:packetevents-spigot:$packetEventsVersion")

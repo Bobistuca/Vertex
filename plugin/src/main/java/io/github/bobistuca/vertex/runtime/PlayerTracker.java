@@ -27,6 +27,10 @@ public final class PlayerTracker {
         Settings.Reach reachSettings;
         final Deque<Integer> pings = new ArrayDeque<>();
         long lastPingSample;
+        double lastX, lastY, lastZ;
+        java.util.UUID lastWorld;
+        long lastMoveNanos;
+        volatile double speed; // blocks per second, from consecutive snapshots
     }
 
     private final Map<UUID, PlayerContext> contexts = new ConcurrentHashMap<>();
@@ -83,8 +87,34 @@ public final class PlayerTracker {
                 entry.pings.removeFirst();
             }
         }
+        trackSpeed(entry, player, nowNanos);
         PlayerSnapshot snapshot = SnapshotCollector.capture(player, tick.tps(), ping, jitter(entry));
         contexts.put(player.getUniqueId(), new PlayerContext(snapshot, entry.grace));
+    }
+
+    private static void trackSpeed(Entry entry, Player player, long nowNanos) {
+        org.bukkit.Location l = player.getLocation();
+        java.util.UUID world = l.getWorld() == null ? null : l.getWorld().getUID();
+        double dt = (nowNanos - entry.lastMoveNanos) / 1e9;
+        if (entry.lastMoveNanos != 0 && dt > 0.01 && dt < 2.0 && world != null && world.equals(entry.lastWorld)) {
+            double dx = l.getX() - entry.lastX;
+            double dy = l.getY() - entry.lastY;
+            double dz = l.getZ() - entry.lastZ;
+            entry.speed = Math.min(30.0, Math.sqrt(dx * dx + dy * dy + dz * dz) / dt);
+        } else {
+            entry.speed = 0.0;
+        }
+        entry.lastX = l.getX();
+        entry.lastY = l.getY();
+        entry.lastZ = l.getZ();
+        entry.lastWorld = world;
+        entry.lastMoveNanos = nowNanos;
+    }
+
+    /** Recent movement speed in blocks per second (0 when unknown). */
+    public double speed(UUID id) {
+        Entry e = entries.get(id);
+        return e == null ? 0.0 : e.speed;
     }
 
     /** Standard deviation of recent latency samples, NaN until enough samples exist. */

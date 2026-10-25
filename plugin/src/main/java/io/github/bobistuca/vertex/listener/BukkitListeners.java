@@ -2,14 +2,11 @@ package io.github.bobistuca.vertex.listener;
 
 import io.github.bobistuca.vertex.core.audit.Actor;
 import io.github.bobistuca.vertex.core.checks.GraceState;
+import io.github.bobistuca.vertex.packet.PacketBridge;
 import io.github.bobistuca.vertex.runtime.VertexRuntime;
-import org.bukkit.Location;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.RemoteConsoleCommandSender;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -30,7 +27,6 @@ import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerVelocityEvent;
 import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.server.ServerCommandEvent;
-import org.bukkit.util.BoundingBox;
 
 /**
  * Bukkit event bridge. Handlers only observe: they record grace timestamps, feed the auditor and the reach check,
@@ -161,22 +157,18 @@ public final class BukkitListeners implements Listener {
         runtime.audit().onCommand(actor, e.getCommand(), System.nanoTime(), System.currentTimeMillis());
     }
 
+    /**
+     * Fallback only: with packet observation running, attack attempts (applied or not) arrive from the packet
+     * listener, so this handler stays silent to avoid counting one attack twice.
+     */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAttack(EntityDamageByEntityEvent e) {
+        if (runtime.packets().state() == PacketBridge.State.RUNNING) {
+            return;
+        }
         if (!(e.getDamager() instanceof Player attacker) || e.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
             return;
         }
-        Entity target = e.getEntity();
-        if (target == attacker || target.getWorld() != attacker.getWorld()) {
-            return;
-        }
-        Location eye = attacker.getEyeLocation();
-        BoundingBox box = target.getBoundingBox();
-        double dx = Math.max(Math.max(box.getMinX() - eye.getX(), 0.0), eye.getX() - box.getMaxX());
-        double dy = Math.max(Math.max(box.getMinY() - eye.getY(), 0.0), eye.getY() - box.getMaxY());
-        double dz = Math.max(Math.max(box.getMinZ() - eye.getZ(), 0.0), eye.getZ() - box.getMaxZ());
-        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        AttributeInstance range = attacker.getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
-        runtime.reachSample(attacker, target, distance, range == null ? 3.0 : range.getValue());
+        runtime.reach().evaluateApplied(attacker, e.getEntity());
     }
 }

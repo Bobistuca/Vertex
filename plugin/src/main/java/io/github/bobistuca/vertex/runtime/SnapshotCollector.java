@@ -5,11 +5,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -18,8 +15,7 @@ final class SnapshotCollector {
     private SnapshotCollector() { }
 
     static PlayerSnapshot capture(Player player, double tps, int pingMillis, double jitterMillis) {
-        AttributeInstance speed = player.getAttribute(Attribute.MOVEMENT_SPEED);
-        double movementSpeed = speed == null ? 0.1 : speed.getValue();
+        double movementSpeed = Compat.movementSpeed(player);
 
         PotionEffect jump = player.getPotionEffect(PotionEffectType.JUMP_BOOST);
         int jumpLevel = jump == null ? 0 : jump.getAmplifier() + 1;
@@ -41,8 +37,8 @@ final class SnapshotCollector {
             }
         }
 
-        InventoryType top = player.getOpenInventory().getType();
-        boolean container = top != InventoryType.CRAFTING && top != InventoryType.CREATIVE && top != InventoryType.PLAYER;
+        boolean container = Compat.containerOpen(player);
+        boolean slippery = world != null && slipperyBelow(world, loc);
 
         return new PlayerSnapshot(
                 player.getGameMode().name(),
@@ -65,7 +61,20 @@ final class SnapshotCollector {
                 container,
                 tps,
                 pingMillis,
-                jitterMillis);
+                jitterMillis,
+                player.isSprinting(),
+                slippery);
+    }
+
+    private static boolean slipperyBelow(World world, Location loc) {
+        int bx = loc.getBlockX();
+        int bz = loc.getBlockZ();
+        if (!world.isChunkLoaded(bx >> 4, bz >> 4)) {
+            return false;
+        }
+        Material type = world.getBlockAt(bx, (int) Math.floor(loc.getY() - 0.1), bz).getType();
+        return type == Material.ICE || type == Material.PACKED_ICE || type == Material.BLUE_ICE
+                || type == Material.FROSTED_ICE;
     }
 
     private static boolean complexAt(Block block) {

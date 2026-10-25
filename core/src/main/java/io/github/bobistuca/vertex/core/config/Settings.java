@@ -14,6 +14,7 @@ public record Settings(
         Checks checks,
         Audit audit,
         Staff staff,
+        TestMode testMode,
         Storage storage) {
 
     /** Palette (light green, dark green, white by default) and label symbols. */
@@ -27,7 +28,7 @@ public record Settings(
     public record Recipients(boolean operators, boolean permission, boolean staff, Set<String> gameModes) { }
 
     public record Alerts(long windowMillis, int maxPerPlayerPerMinute, int maxPerRecipientPerMinute,
-                         boolean logToConsole, ActionBar actionBar, Sound sound, Recipients recipients) { }
+                         boolean logToConsole, boolean notifySubject, ActionBar actionBar, Sound sound, Recipients recipients) { }
 
     public record ClientInfo(boolean enabled, long timeoutMillis, int maxChannels) { }
 
@@ -51,9 +52,10 @@ public record Settings(
 
     public record Movement(boolean enabled, double speedFactor, double speedBase, double flyFactor,
                            double maxStepUp, double jumpBoostPerLevel, double airRiseLimit, int hoverPackets,
+                           double sustainedFactor, int sustainedPackets, double slipperyMultiplier,
                            double bufferThreshold, double bufferDecay) { }
 
-    public record Reach(boolean enabled, double tolerance, long latencyCapMillis, double latencyBlocksPerSecond,
+    public record Reach(boolean enabled, double tolerance, long latencyCapMillis, long processingDelayMillis,
                         double creativeBonus, double bufferThreshold, double bufferDecay) { }
 
     public record Inventory(boolean enabled, long windowGraceMillis) { }
@@ -72,15 +74,22 @@ public record Settings(
                         List<String> monitoredPermissions, boolean notifyAuthorized, boolean notifyNoChange) { }
 
     /**
-     * Administrative staff recognition.
+     * Who bypasses the gameplay checks. Receiving alerts never exempts anyone, and operator status alone exempts
+     * nobody unless {@code operatorsExempt} is enabled explicitly.
      *
-     * @param exemptFromGameplayChecks master switch for the gameplay-check bypass (group and permission based)
-     * @param luckPerms                use the LuckPerms API to recognize groups
-     * @param groups                   configured ranks: group ids or labels that have an entry in {@code mappings}
-     * @param mappings                 label -> candidate real group ids (for example "Mod Plus" -> modplus, mod_plus)
+     * @param bypassPermission  honour the explicit permission {@code vertex.bypass.gameplay}
+     * @param wildcardBypass    also accept that permission when it is only granted through a wildcard ({@code *})
+     * @param operatorsExempt   exempt operators (explicit opt-in, default off)
+     * @param luckPerms         read LuckPerms groups (recognition, alert eligibility, diagnostics)
+     * @param luckPermsExempt   exempt members of the configured groups (explicit opt-in, default off)
+     * @param groups            configured ranks: group ids or labels that have an entry in {@code mappings}
+     * @param mappings          label -> candidate real group ids (for example "Mod Plus" -> modplus, mod_plus)
      */
-    public record Staff(boolean exemptFromGameplayChecks, boolean luckPerms, List<String> groups,
-                        java.util.Map<String, List<String>> mappings) { }
+    public record Staff(boolean bypassPermission, boolean wildcardBypass, boolean operatorsExempt, boolean luckPerms,
+                        boolean luckPermsExempt, List<String> groups, java.util.Map<String, List<String>> mappings) { }
+
+    /** Per-player forced evaluation for diagnosing detections. */
+    public record TestMode(boolean enabled, int durationMinutes) { }
 
     public record Storage(int maxEntries, long maxBytes, int retentionDays, int queueCapacity,
                           int memoryPerPlayer, int memoryGlobal) { }

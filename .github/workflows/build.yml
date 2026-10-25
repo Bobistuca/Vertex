@@ -35,8 +35,13 @@ jobs:
           echo "--- unrelocated third-party classes (must be none)"
           if unzip -Z1 "$JAR" | grep -E '^(net/kyori|com/github/retrooper|io/github/retrooper|org/yaml)/' ; then exit 1; fi
           echo "--- required metadata and optional-integration checks"
-          unzip -p "$JAR" plugin.yml | grep -q 'softdepend: \[LuckPerms\]'
+          unzip -p "$JAR" plugin.yml | grep -q 'softdepend: \[LuckPerms, ViaVersion, ViaBackwards\]'
           unzip -p "$JAR" plugin.yml | grep -q 'vertex.bypass.gameplay'
+          unzip -p "$JAR" plugin.yml | grep -q "api-version: '1.21'"
+          unzip -p "$JAR" plugin.yml | grep -q 'vertex.command.testmode:'
+          unzip -p "$JAR" plugin.yml | grep -q 'vertex.command.diagnose:'
+          if unzip -Z1 "$JAR" | grep -E '^com/viaversion/' ; then echo "ViaVersion API must not be bundled"; exit 1; fi
+          unzip -Z1 "$JAR" | grep -q '^io/github/bobistuca/vertex/integration/ViaBridge.class'
           unzip -p "$JAR" plugin.yml | grep -A2 'vertex.bypass.gameplay:' | grep -q 'default: false'
           if unzip -Z1 "$JAR" | grep -E '^net/luckperms/' ; then echo "LuckPerms API must not be bundled"; exit 1; fi
           unzip -Z1 "$JAR" | grep -q '^io/github/bobistuca/vertex/core/staff/ExemptionRegistry.class'
@@ -45,6 +50,32 @@ jobs:
           echo "--- META-INF entries (excluding maven metadata and multi-release classes)"
           unzip -Z1 "$JAR" | grep '^META-INF/' | grep -vE '^META-INF/(maven|versions)/' | head -40 || true
           echo "--- bundled resources"; unzip -Z1 "$JAR" | grep -E '^(config.yml|lang/|assets/mappings/)' | head -8
+
+      - name: Verify the Java 21 bytecode baseline of the whole jar (own classes and bundled dependencies)
+        run: |
+          python3 - <<'PY'
+          import struct, sys, zipfile
+          limit = 65  # Java 21; the shared jar must load on 1.21 servers running Java 21
+          bad, seen, newest = [], 0, 0
+          with zipfile.ZipFile("plugin/build/libs/Vertex.jar") as z:
+              for name in z.namelist():
+                  if name.startswith("META-INF/versions/"):
+                      continue  # multi-release classes are only selected by newer runtimes
+                  if not (name.endswith(".class") or name.endswith(".class.bin")):
+                      continue
+                  head = z.read(name)[:8]
+                  if len(head) < 8 or head[:4] != b"\xca\xfe\xba\xbe":
+                      continue
+                  major = struct.unpack(">H", head[6:8])[0]
+                  seen += 1
+                  newest = max(newest, major)
+                  if major > limit:
+                      bad.append((name, major))
+          print(f"checked {seen} classes, highest class-file major version {newest} (65 = Java 21)")
+          for name, major in bad[:30]:
+              print("TOO NEW:", name, major)
+          sys.exit(1 if bad else 0)
+          PY
 
       - name: Exercise the shaded jar (relocated Adventure/MiniMessage and SnakeYAML)
         run: |

@@ -54,8 +54,7 @@ public final class AlertDispatcher {
 
     public RecipientView view(Player player) {
         return new RecipientView(player.isOp(), player.hasPermission("vertex.alerts"),
-                exemptions.get(player.getUniqueId()).map(e -> e.source()
-                        == io.github.bobistuca.vertex.core.staff.Exemption.Source.LUCKPERMS_GROUP).orElse(false),
+                exemptions.membership(player.getUniqueId()).isPresent(),
                 player.getGameMode().name(), preferences.isOptedOut(player.getUniqueId()));
     }
 
@@ -111,7 +110,7 @@ public final class AlertDispatcher {
         Messenger m = messenger.get();
         Settings.Sound snd = settings.get().alerts().sound();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (excludeSubject != null && p.getUniqueId().equals(excludeSubject)) {
+            if (excludeSubject != null && p.getUniqueId().equals(excludeSubject) && !showToSubject(excludeSubject)) {
                 continue;
             }
             if (!policy.shouldReceive(view(p)) || !pipeline.allowForRecipient(p.getUniqueId())) {
@@ -128,6 +127,11 @@ public final class AlertDispatcher {
         }
     }
 
+    /** The subject sees their own alerts only in test mode or when alerts.notify-subject is enabled. */
+    private boolean showToSubject(UUID subject) {
+        return settings.get().alerts().notifySubject() || exemptions.testModeActive(subject);
+    }
+
     /** Optional live "Nx" counter in the action bar while a window is still open. */
     public void actionBar(AlertPipeline.LiveUpdate update) {
         Messenger m = messenger.get();
@@ -137,7 +141,8 @@ public final class AlertDispatcher {
         Rich bar = messages.get().actionBar(update.playerName(), update.checkId(), update.count());
         RecipientPolicy policy = policy();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!p.getUniqueId().equals(update.playerId()) && policy.shouldReceive(view(p))) {
+            if ((!p.getUniqueId().equals(update.playerId()) || showToSubject(update.playerId()))
+                    && policy.shouldReceive(view(p))) {
                 m.sendActionBar(p.getUniqueId(), bar);
             }
         }

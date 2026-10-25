@@ -90,6 +90,15 @@ public final class ClickAnalyzer {
         return result;
     }
 
+    /** Intervals collected towards the next analysis window. */
+    public int bufferedSamples() {
+        return intervalsMs.size();
+    }
+
+    public double bufferValue() {
+        return buffer.value();
+    }
+
     /** Forgets the current run (for example after a teleport or grace period). */
     public void reset() {
         intervalsMs.clear();

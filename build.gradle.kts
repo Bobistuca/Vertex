@@ -15,7 +15,9 @@ subprojects {
             toolchain.languageVersion = JavaLanguageVersion.of(25)
         }
         tasks.withType<JavaCompile>().configureEach {
-            options.release = 25
+            // Shared baseline: Java 21 bytecode so the one jar loads on Minecraft 1.21 servers. The JDK 25
+            // toolchain only supplies the newest class files to compile against; --release 21 hides newer JDK APIs.
+            options.release = 21
             options.encoding = "UTF-8"
             options.compilerArgs.add("-Xlint:all,-serial,-processing")
             // The server-independent core must compile without any warning; integration modules report them.

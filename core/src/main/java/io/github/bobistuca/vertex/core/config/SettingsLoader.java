@@ -104,7 +104,7 @@ public final class SettingsLoader {
                 al.longValue("aggregation-window-ms", 2000, 200, 60_000),
                 rl.integer("max-per-player-per-minute", 30, 0, 10_000),
                 rl.integer("max-per-recipient-per-minute", 60, 0, 10_000),
-                al.bool("log-to-console", true),
+                al.bool("log-to-console", true), al.bool("notify-subject", false),
                 new Settings.ActionBar(ab.bool("enabled", false)),
                 new Settings.Sound(so.bool("enabled", false), so.text("name", "block.note_block.pling", 64),
                         so.decimal("volume", 0.6, 0.0, 2.0), so.decimal("pitch", 1.4, 0.5, 2.0)),
@@ -146,14 +146,15 @@ public final class SettingsLoader {
                         ac.decimal("dedupe-ms", 25.0, 0.0, 49.0), ac.decimal("min-tps", 18.0, 1.0, 20.0),
                         ac.decimal("max-jitter-ms", 40.0, 1.0, 1000.0),
                         ac.decimal("buffer-threshold", 1.0, 0.5, 20.0), ac.decimal("buffer-decay", 0.5, 0.0, 10.0)),
-                new Settings.Movement(mv.bool("enabled", true), mv.decimal("speed-factor", 6.0, 2.0, 50.0),
-                        mv.decimal("speed-base", 0.1, 0.0, 1.0), mv.decimal("fly-factor", 22.0, 5.0, 200.0),
+                new Settings.Movement(mv.bool("enabled", true), mv.decimal("speed-factor", 3.4, 1.0, 50.0),
+                        mv.decimal("speed-base", 0.03, 0.0, 1.0), mv.decimal("fly-factor", 14.0, 5.0, 200.0),
                         mv.decimal("max-step-up", 0.62, 0.3, 5.0), mv.decimal("jump-boost-per-level", 0.35, 0.0, 2.0),
                         mv.decimal("air-rise-limit", 1.45, 1.0, 10.0), mv.integer("hover-packets", 14, 5, 200),
-                        mv.decimal("buffer-threshold", 10.0, 1.0, 200.0), mv.decimal("buffer-decay", 0.25, 0.0, 10.0)),
-                new Settings.Reach(rh.bool("enabled", true), rh.decimal("tolerance", 0.5, 0.0, 5.0),
-                        rh.longValue("latency-cap-ms", 300, 0, 2000),
-                        rh.decimal("latency-blocks-per-second", 6.0, 0.0, 30.0),
+                        mv.decimal("sustained-factor", 2.9, 1.0, 50.0), mv.integer("sustained-packets", 20, 8, 200),
+                        mv.decimal("slippery-multiplier", 2.2, 1.0, 10.0),
+                        mv.decimal("buffer-threshold", 6.0, 1.0, 200.0), mv.decimal("buffer-decay", 0.25, 0.0, 10.0)),
+                new Settings.Reach(rh.bool("enabled", true), rh.decimal("tolerance", 0.15, 0.0, 5.0),
+                        rh.longValue("latency-cap-ms", 250, 0, 2000), rh.longValue("processing-delay-ms", 60, 0, 1000),
                         rh.decimal("creative-bonus", 2.0, 0.0, 10.0),
                         rh.decimal("buffer-threshold", 3.0, 1.0, 50.0), rh.decimal("buffer-decay", 0.5, 0.0, 10.0)),
                 new Settings.Inventory(ck.section("inventory").bool("enabled", true),
@@ -178,11 +179,15 @@ public final class SettingsLoader {
 
         ConfigTree sf = t.section("staff");
         ConfigTree lp = sf.section("luckperms");
-        Settings.Staff staff = new Settings.Staff(sf.bool("exempt-from-gameplay-checks", true), lp.bool("enabled", true),
+        Settings.Staff staff = new Settings.Staff(sf.bool("bypass-permission", true), sf.bool("permission-wildcards", false),
+                sf.bool("operators-exempt", false), lp.bool("enabled", true), lp.bool("exempt-groups", true),
                 lp.textList("groups", List.of("Mod", "Mod Plus", "Administrator", "Administrador", "Dono", "Owner"), 100, 64),
                 lp.hasKey("mappings") ? lp.textListMap("mappings", 100, 20, 64)
                         : java.util.Map.of("Mod Plus", List.of("modplus", "mod_plus", "mod-plus")));
         t.errors().addAll(StaffGroups.validate(staff));
+
+        ConfigTree tm = t.section("test-mode");
+        Settings.TestMode testMode = new Settings.TestMode(tm.bool("enabled", true), tm.integer("duration-minutes", 15, 1, 240));
 
         ConfigTree st = t.section("storage");
         Settings.Storage storage = new Settings.Storage(
@@ -194,7 +199,7 @@ public final class SettingsLoader {
         if (!t.errors().isEmpty()) {
             throw new ConfigException(new ArrayList<>(t.errors()));
         }
-        return new Settings(language, appearance, alerts, clientInfo, grace, checks, audit, staff, storage);
+        return new Settings(language, appearance, alerts, clientInfo, grace, checks, audit, staff, testMode, storage);
     }
 
     private static Set<UUID> uuids(ConfigTree t, String path, List<String> raw) {

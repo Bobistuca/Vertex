@@ -33,13 +33,21 @@ public final class VertexPacketListener extends PacketListenerAbstract {
         void brand(UUID id, byte[] payload, long nanos);
     }
 
+    /** Receives an attack attempt (any thread). The target is resolved later on the server thread. */
+    public interface AttackSink {
+        void attack(UUID id, int entityId, long nanos);
+    }
+
     private final Consumer<Observation> sink;
+    private final AttackSink attackSink;
     private final PacketCounters counters;
     private final BrandSink brandSink;
     private final AtomicLong errors = new AtomicLong();
 
-    public VertexPacketListener(Consumer<Observation> sink, PacketCounters counters, BrandSink brandSink) {
+    public VertexPacketListener(Consumer<Observation> sink, PacketCounters counters, BrandSink brandSink,
+                                AttackSink attackSink) {
         super(PacketListenerPriority.MONITOR);
+        this.attackSink = attackSink;
         this.sink = sink;
         this.counters = counters;
         this.brandSink = brandSink;
@@ -86,9 +94,12 @@ public final class VertexPacketListener extends PacketListenerAbstract {
                 WrapperPlayClientInteractEntity w = new WrapperPlayClientInteractEntity(event);
                 if (w.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK) {
                     sink.accept(new Observation.Attack(id, name, now, w.getEntityId()));
+                    attackSink.attack(id, w.getEntityId(), now);
                 }
             } else if (type == PacketType.Play.Client.ATTACK) {
-                sink.accept(new Observation.Attack(id, name, now, new WrapperPlayClientAttack(event).getEntityId()));
+                int target = new WrapperPlayClientAttack(event).getEntityId();
+                sink.accept(new Observation.Attack(id, name, now, target));
+                attackSink.attack(id, target, now);
             } else if (type == PacketType.Play.Client.ANIMATION) {
                 sink.accept(new Observation.Swing(id, name, now));
             } else if (type == PacketType.Play.Client.PLAYER_DIGGING) {

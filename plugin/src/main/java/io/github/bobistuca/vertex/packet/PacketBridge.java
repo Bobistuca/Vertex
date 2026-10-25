@@ -61,13 +61,14 @@ public final class PacketBridge {
     }
 
     /** {@code onEnable}. */
-    public void start(Consumer<Observation> sink, PacketCounters counters, BrandSink brandSink) {
+    public void start(Consumer<Observation> sink, PacketCounters counters, BrandSink brandSink,
+                      VertexPacketListener.AttackSink attackSink) {
         if (state != State.LOADED) {
             return;
         }
         try {
             PacketEvents.getAPI().init();
-            listener = new VertexPacketListener(sink, counters, brandSink);
+            listener = new VertexPacketListener(sink, counters, brandSink, attackSink);
             registered = PacketEvents.getAPI().getEventManager().registerListener(listener);
             try {
                 libraryVersion = PacketEvents.getAPI().getVersion().toString();
@@ -108,6 +109,19 @@ public final class PacketBridge {
             return v == null || v == ClientVersion.UNKNOWN ? null : v;
         } catch (Throwable t) {
             return null;
+        }
+    }
+
+    /** Server protocol as seen by the packet library, for diagnostics ("unknown" when it is not running). */
+    public String serverProtocol() {
+        if (state != State.RUNNING) {
+            return "unknown";
+        }
+        try {
+            var v = PacketEvents.getAPI().getServerManager().getVersion();
+            return v.name() + " (protocol " + v.getProtocolVersion() + ")";
+        } catch (Throwable t) {
+            return "unknown";
         }
     }
 

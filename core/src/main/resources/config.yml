@@ -18,6 +18,7 @@ appearance:
 alerts:
   aggregation-window-ms: 2000   # incidents of the same player and check inside one window become one "Nx" alert
   log-to-console: true          # private console line for each alert
+  notify-subject: false         # show a player the alerts about themselves (always on while their test mode is active)
   rate-limit:
     max-per-player-per-minute: 30      # chat alerts per player and minute (evidence is still recorded); 0 = unlimited
     max-per-recipient-per-minute: 60   # chat alerts one staff member receives per minute; 0 = unlimited
@@ -88,20 +89,28 @@ checks:
     buffer-decay: 0.5
   movement:
     enabled: true
-    speed-factor: 6.0           # allowed horizontal blocks per packet = movement-speed attribute * factor + base
-    speed-base: 0.1
-    fly-factor: 22.0
+    # Horizontal limit per packet = movement-speed attribute * speed-factor + speed-base. The factor is calibrated on
+    # a sprint-jump chain (the fastest vanilla ground movement, about 2.74 blocks/tick per unit of attribute) plus
+    # a 25% margin, so legitimate sprint-jumping never reaches it.
+    speed-factor: 3.4
+    speed-base: 0.03
+    fly-factor: 14.0
     max-step-up: 0.62
     jump-boost-per-level: 0.35
     air-rise-limit: 1.45
     hover-packets: 14
-    buffer-threshold: 10.0
+    # Sustained speed (the b-hop signature): average horizontal speed over this many moving packets, which a
+    # legitimate sprint-jump chain cannot exceed by more than a few percent even though one jump alone can look fast.
+    sustained-factor: 2.9
+    sustained-packets: 20
+    slippery-multiplier: 2.2    # limits are multiplied on ice, where vanilla movement is legitimately faster
+    buffer-threshold: 6.0
     buffer-decay: 0.25
   reach:
     enabled: true
-    tolerance: 0.5
-    latency-cap-ms: 300
-    latency-blocks-per-second: 6.0
+    tolerance: 0.15             # blocks added on top of the server-known interaction range
+    latency-cap-ms: 250         # round-trip time counted at most when deriving the uncertainty
+    processing-delay-ms: 60     # server measures about a tick after the client acted
     creative-bonus: 2.0
     buffer-threshold: 3.0
     buffer-decay: 0.5
@@ -128,20 +137,34 @@ audit:
   notify-authorized-changes: false
   notify-no-change: false
 
-# Administrative staff are recognized from LuckPerms groups (never from prefixes, nicknames, tags or client data) and
-# bypass every gameplay and packet-cheat check: no violations, counters, aggregated alerts or suspect entries.
-# Auditing of OP, group, tag and game-mode changes is separate and keeps running. Recognizing a rank grants no
-# permission, no OP and no command access. Players with the explicit permission vertex.bypass.gameplay (default:
-# nobody, not even operators) are exempt as well. LuckPerms membership includes inherited groups in the player's
-# active server/world contexts and temporary memberships, not only the primary group.
+# Who is exempt from the gameplay and packet checks. Nothing is implicit:
+#  - Receiving alerts (alerts.recipients) NEVER exempts a player.
+#  - Operator status alone NEVER exempts a player (operators-exempt, default false).
+#  - LuckPerms group exemption (below) applies to the listed administrative ranks and is on by default; set
+#    exempt-groups: false to keep recognizing the ranks (for alerts and audit) while still checking them.
+#  - The permission vertex.bypass.gameplay (default: nobody) exempts a player only when it is granted by that exact
+#    node. A wildcard such as * or vertex.* also makes hasPermission() true, so it is ignored unless
+#    permission-wildcards is true; diagnostics then report "WILDCARD_ONLY".
+# Administrative AUDITING of OP, group, tag and game-mode changes is separate and keeps running for everyone.
+# Use /vertex testmode <player> on to force detection for one player without touching OP, ranks or permissions.
 staff:
-  exempt-from-gameplay-checks: true   # master switch for the group and permission bypass
+  bypass-permission: true       # honour vertex.bypass.gameplay
+  permission-wildcards: false   # also honour it when it is only effective through * or vertex.*
+  operators-exempt: false       # explicit opt-in: exempt every operator from the checks
   luckperms:
-    enabled: true
-    # Ranks. Use the real LuckPerms group id (matched exactly, case-insensitive) or a label defined in "mappings".
+    enabled: true               # resolve groups through the official LuckPerms API (inheritance, contexts, temporary groups)
+    exempt-groups: true         # members of the groups below are exempt from the checks
+    # Use the real LuckPerms group id (matched exactly, case-insensitive) or a label defined in "mappings".
     groups: [Mod, Mod Plus, Administrator, Administrador, Dono, Owner]
     mappings:
       "Mod Plus": [modplus, mod_plus, mod-plus]   # a label can map to several candidate ids; only existing groups match
+
+# /vertex testmode <player> on|off forces the checks on for ONE player (console allowed; needs vertex.command.testmode).
+# It overrides OP, staff groups and the bypass permission for that player only, keeps OP/ranks/permissions/game mode,
+# also shows the player their own alerts, and ends by itself, on logout and on restart.
+test-mode:
+  enabled: true
+  duration-minutes: 15
 
 storage:
   max-entries: 5000

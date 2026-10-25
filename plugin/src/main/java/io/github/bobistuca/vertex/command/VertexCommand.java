@@ -16,6 +16,7 @@ import io.github.bobistuca.vertex.core.platform.Messenger;
 import io.github.bobistuca.vertex.core.recipient.CommandAccess;
 import io.github.bobistuca.vertex.core.recipient.CommandAccess.Sub;
 import io.github.bobistuca.vertex.core.storage.EvidenceEntry;
+import io.github.bobistuca.vertex.packet.PacketBridge;
 import io.github.bobistuca.vertex.runtime.VertexRuntime;
 import java.time.format.DateTimeFormatter;
 import java.time.ZoneOffset;
@@ -46,6 +47,8 @@ public final class VertexCommand implements TabExecutor {
             case "help", "ajuda", "?" -> Sub.HELP;
             case "alerts", "alertas" -> Sub.ALERTS;
             case "inspect", "inspecionar" -> Sub.INSPECT;
+            case "diagnose", "diagnosticar", "diag" -> Sub.DIAGNOSE;
+            case "testmode", "teste" -> Sub.TESTMODE;
             case "history", "historico", "histórico" -> Sub.HISTORY;
             case "status" -> Sub.STATUS;
             case "reload", "recarregar" -> Sub.RELOAD;
@@ -80,6 +83,8 @@ public final class VertexCommand implements TabExecutor {
                 case HELP -> help(sender);
                 case ALERTS -> alerts(sender);
                 case INSPECT -> inspect(sender, args);
+                case DIAGNOSE -> diagnose(sender, args);
+                case TESTMODE -> testMode(sender, args);
                 case HISTORY -> history(sender, args);
                 case STATUS -> status(sender);
                 case RELOAD -> reload(sender);
@@ -95,7 +100,7 @@ public final class VertexCommand implements TabExecutor {
     private void help(CommandSender sender) {
         MessageCatalog c = runtime.messages().catalog();
         reply(sender, c.render("command.help.header"));
-        for (Sub sub : new Sub[] {Sub.ALERTS, Sub.INSPECT, Sub.HISTORY, Sub.STATUS, Sub.RELOAD}) {
+        for (Sub sub : new Sub[] {Sub.ALERTS, Sub.INSPECT, Sub.DIAGNOSE, Sub.TESTMODE, Sub.HISTORY, Sub.STATUS, Sub.RELOAD}) {
             if (allowed(sender, sub)) {
                 reply(sender, c.render("command.help." + sub.name().toLowerCase(Locale.ROOT)));
             }
@@ -145,7 +150,8 @@ public final class VertexCommand implements TabExecutor {
             line(sender, "label.capabilities", "grace=" + (reason == null ? "none" : reason.name()));
         }
         var exemption = runtime.staff().registry().get(id);
-        line(sender, "label.exemption", exemption.map(e -> e.source() + ": " + e.detail()).orElse("none"));
+        line(sender, "label.exemption", exemption.map(e -> e.describe()).orElse("none")
+                + (runtime.staff().registry().testModeActive(id) ? " (test mode ACTIVE)" : ""));
         PlayerReport report = runtime.engine().report(id).orElse(null);
         if (report == null) {
             reply(sender, c.render("command.inspect.none"));
@@ -157,6 +163,114 @@ public final class VertexCommand implements TabExecutor {
                 ? c.render("label.never").toPlainText() : TIME.format(java.time.Instant.ofEpochMilli(report.lastIncidentWallMillis())) + " UTC");
         line(sender, "label.windows", report.analyzedWindows() + " (" + report.skippedWindows() + " skipped) "
                 + report.lastWindowSummary());
+    }
+
+    private void testMode(CommandSender sender, String[] args) {
+        MessageCatalog c = runtime.messages().catalog();
+        if (args.length < 3 || !(args[2].equalsIgnoreCase("on") || args[2].equalsIgnoreCase("off"))) {
+            reply(sender, c.render("command.testmode.usage"));
+            return;
+        }
+        if (!runtime.settings().testMode().enabled()) {
+            reply(sender, c.render("command.testmode.disabled"));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            reply(sender, c.render("command.player-not-found", Map.of("name", args[1])));
+            return;
+        }
+        UUID id = target.getUniqueId();
+        var registry = runtime.staff().registry();
+        String minutes = Integer.toString(runtime.settings().testMode().durationMinutes());
+        Map<String, String> ph = Map.of("player", target.getName(), "minutes", minutes);
+        if (args[2].equalsIgnoreCase("on")) {
+            boolean was = registry.testModeActive(id);
+            runtime.staff().enableTestMode(id);
+            reply(sender, c.render(was ? "command.testmode.already-on" : "command.testmode.on", ph));
+        } else if (registry.testModeActive(id)) {
+            runtime.staff().disableTestMode(id);
+            reply(sender, c.render("command.testmode.off", ph));
+        } else {
+            reply(sender, c.render("command.testmode.already-off", ph));
+        }
+        runtime.plugin().getLogger().info("Test mode " + args[2].toLowerCase(Locale.ROOT) + " for " + target.getName()
+                + " requested by " + sender.getName());
+    }
+
+    private void diagnose(CommandSender sender, String[] args) {
+        MessageCatalog c = runtime.messages().catalog();
+        if (args.length < 2) {
+            reply(sender, c.render("command.usage", Map.of("usage", "/vertex diagnose <player>")));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            reply(sender, c.render("command.player-not-found", Map.of("name", args[1])));
+            return;
+        }
+        UUID id = target.getUniqueId();
+        long now = System.nanoTime();
+        var platform = runtime.platform();
+        var packets = runtime.packets();
+        var via = runtime.via();
+        var registry = runtime.staff().registry();
+        var reach = runtime.tracker().reach(id);
+        PlayerContext ctx = runtime.tracker().context(id);
+        reply(sender, c.render("command.diagnose.header", Map.of("player", target.getName(), "uuid", id.toString())));
+        line(sender, "label.build", runtime.plugin().getDescription().getVersion());
+        line(sender, "label.platform", platform.serverName() + " (" + platform.serverVersion() + ")");
+        line(sender, "label.minecraft", platform.minecraftVersion());
+        line(sender, "label.server-protocol", packets.serverProtocol());
+        var original = via.clientProtocol(id);
+        var seen = packets.clientVersion(target);
+        line(sender, "label.client-protocol", (original != null
+                ? original.name() + " (" + original.protocol() + ", original, from ViaVersion)" : unknown())
+                + " | seen by packet library: " + (seen == null ? unknown() : seen.getReleaseName()));
+        line(sender, "label.packets", packets.state().name().toLowerCase(Locale.ROOT)
+                + (packets.failure().isEmpty() ? "" : " (" + packets.failure() + ")") + " | PacketEvents " + packets.libraryVersion());
+        line(sender, "label.via", via.describe() + (via.viaVersion()
+                ? " | packets are observed AFTER translation to the server protocol" : ""));
+        var d = runtime.staff().details(id);
+        line(sender, "label.operator", Boolean.toString(target.isOp()) + " (not an exemption unless staff.operators-exempt)");
+        line(sender, "label.gamemode", target.getGameMode().name());
+        line(sender, "label.groups", d == null || d.resolvedGroups() == null ? "not resolved (LuckPerms inactive)"
+                : d.resolvedGroups().toString());
+        line(sender, "label.bypass", d == null ? unknown() : d.permission() + (d.decision().note().isEmpty() ? ""
+                : " - " + d.decision().note()));
+        var underlying = registry.underlying(id);
+        var effective = registry.get(id);
+        line(sender, "label.exemption", effective.map(e -> e.describe()).orElse(underlying.isPresent()
+                ? "none (overridden by test mode: would be " + underlying.get().describe() + ")" : "none"));
+        line(sender, "label.testmode", registry.testModeActive(id)
+                ? "ACTIVE, " + (registry.testModeRemainingMillis(id) / 1000) + " s left" : "off");
+        if (ctx != null) {
+            GraceState.Reason g = ctx.grace().active(now, runtime.settings().grace(), ctx.snapshot().tps());
+            line(sender, "label.grace", g == null ? "none" : g.name());
+            line(sender, "label.ping", ctx.snapshot().pingMillis() < 0 ? unknown() : ctx.snapshot().pingMillis() + " ms");
+        } else {
+            line(sender, "label.grace", "no server-side snapshot yet");
+        }
+        var diagnosis = runtime.engine().diagnose(id, now, ctx, packets.state() == PacketBridge.State.RUNNING, true,
+                runtime.analysis().dropped());
+        line(sender, "label.packets-seen", diagnosis.packets() + " (last "
+                + (diagnosis.lastPacketAgoMillis() < 0 ? "never" : diagnosis.lastPacketAgoMillis() + " ms ago")
+                + ", queue drops " + diagnosis.observationsDropped() + ")");
+        line(sender, "label.reach", "packets queued=" + runtime.reach().received() + " unresolved target="
+                + runtime.reach().unresolved() + " dropped=" + runtime.reach().dropped()
+                + (reach == null ? "" : " | evaluated for player=" + reach.evaluated() + " buffer=" + String.format(Locale.ROOT, "%.2f", reach.bufferValue())));
+        line(sender, "label.pending", Integer.toString(runtime.pipeline().openGroups()));
+        line(sender, "label.eligible", Long.toString(Bukkit.getOnlinePlayers().stream()
+                .filter(runtime.dispatcher()::eligible).count()));
+        for (var check : diagnosis.checks()) {
+            String detail = (check.needed() > 0 ? "samples " + check.samples() + "/" + check.needed() + ", " : "")
+                    + "evaluated " + check.evaluated() + ", incidents " + check.incidents()
+                    + (check.buffer().isEmpty() ? "" : ", buffer " + check.buffer())
+                    + (check.note().isEmpty() ? "" : " - " + check.note());
+            reply(sender, c.render("command.diagnose.check", Map.of("check", check.id(),
+                    "status", check.status().name(), "detail", detail)));
+        }
+        reply(sender, c.render("command.diagnose.footer"));
     }
 
     private void history(CommandSender sender, String[] args) {
@@ -209,7 +323,7 @@ public final class VertexCommand implements TabExecutor {
         var metrics = runtime.metrics();
         line(sender, "label.metrics", metrics.source() + " | tps=" + fmt(metrics.tps()) + " | mspt=" + fmt(metrics.mspt()));
         line(sender, "label.dependency", "PacketEvents " + packets.libraryVersion() + " (embedded, relocated); LuckPerms "
-                + (runtime.luckPermsActive() ? "active" : "not detected"));
+                + (runtime.luckPermsActive() ? "active" : "not detected") + "; ViaVersion: " + runtime.via().describe());
         var engine = runtime.engine();
         var analysis = runtime.analysis();
         var pipe = runtime.pipeline();
@@ -255,7 +369,7 @@ public final class VertexCommand implements TabExecutor {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> out = new ArrayList<>();
         if (args.length == 1) {
-            for (String name : new String[] {"help", "alerts", "inspect", "history", "status", "reload"}) {
+            for (String name : new String[] {"help", "alerts", "inspect", "diagnose", "testmode", "history", "status", "reload"}) {
                 Sub sub = resolve(name);
                 if (allowed(sender, sub) && name.startsWith(args[0].toLowerCase(Locale.ROOT))) {
                     out.add(name);
@@ -267,7 +381,14 @@ public final class VertexCommand implements TabExecutor {
         if (sub == null || !allowed(sender, sub)) {
             return out;
         }
-        if (sub == Sub.INSPECT && args.length == 2 || sub == Sub.HISTORY && args.length >= 2) {
+        if (sub == Sub.TESTMODE && args.length == 3) {
+            for (String n : new String[] {"on", "off"}) {
+                if (n.startsWith(args[2].toLowerCase(Locale.ROOT))) out.add(n);
+            }
+            return out;
+        }
+        if ((sub == Sub.INSPECT || sub == Sub.DIAGNOSE || sub == Sub.TESTMODE) && args.length == 2
+                || sub == Sub.HISTORY && args.length >= 2) {
             String prefix = args[args.length - 1].toLowerCase(Locale.ROOT);
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getName().toLowerCase(Locale.ROOT).startsWith(prefix)) {
