@@ -333,6 +333,10 @@ jobs:
               results["cell"]["server_version_output"] = ver[:300]
               log = "\n".join(strip(l) for l in srv.snap())
               check("plugin-enabled", "Enabling Vertex" in log and srv.wait(r"(Vertex is running)", 30) is not None, "startup banner")
+              log = "\n".join(strip(l) for l in srv.snap())
+              relevant = [l for l in log.split("\n") if re.search(r"Vertex|ERROR|Exception|Caused by|WARN.*plugin", l)][:70]
+              results["server_log_excerpt"] = relevant
+              for l in relevant: print("   LOG " + l[:260], flush=True)
               bad = [l for l in log.split("\n") if re.search(r"Could not load|Error occurred while enabling Vertex|SEVERE.*Vertex|NoClassDefFoundError|NoSuchMethodError|IncompatibleClassChangeError", l)]
               check("no-load-errors", not bad, bad[:3])
               for want in ("ViaVersion", "ViaBackwards"):
@@ -349,7 +353,7 @@ jobs:
                   return finish(results, args, srv)
 
               # ---- bots -------------------------------------------------------------------------------------
-              pkg = pathlib.Path("harness")
+              pkg = pathlib.Path("harness").resolve()
               def start_bot(name):
                   p = Proc(["node", str(pkg / "bot.js"), "127.0.0.1", "25565", name, args.bot], str(pkg))
                   if p.wait(r"BOT_SPAWN", 120) is None:

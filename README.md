@@ -21,11 +21,14 @@ measurements, the reason, latency, TPS and game mode.
 
 - [Installation](#installation)
 - [Compatibility](#compatibility)
+- [Who is checked: exemptions, operators and test mode](#who-is-checked-exemptions-operators-and-test-mode)
+- [Diagnostics](#diagnostics)
 - [What Vertex checks](#what-vertex-checks)
 - [Alerts and aggregation](#alerts-and-aggregation)
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration and localization](#configuration-and-localization)
 - [Administrative auditing](#administrative-auditing)
+- [ViaVersion and ViaBackwards](#viaversion-and-viabackwards)
 - [Client information on join](#client-information-on-join)
 - [Limitations and false-positive handling](#limitations-and-false-positive-handling)
 - [Building and testing](#building-and-testing)
@@ -33,7 +36,9 @@ measurements, the reason, latency, TPS and game mode.
 
 ## Installation
 
-1. Use **Java 25** (required by Minecraft 26.1 and newer, so every supported server already runs on it).
+1. Use the Java version your server requires: **Java 21** for Minecraft 1.21.x, **Java 25** for 26.x. `Vertex.jar` is
+   one file whose own bytecode is Java 21 (class-file major 65, enforced by the `Build` workflow), so the same jar
+   loads on both.
 2. Download `Vertex.jar` from the *Build* workflow artifact of the latest successful run on the
    [Actions tab](https://github.com/Bobistuca/Vertex/actions/workflows/build.yml), or build it yourself
    (`./gradlew build`, output in `plugin/build/libs/Vertex.jar`).
@@ -47,43 +52,104 @@ non-numeric build identifier (`build-<git commit>`), not a release label.
 
 ## Compatibility
 
-Target: Minecraft Java Edition **26.1 through 26.3**, on **CraftBukkit**, **Spigot** and **Paper**.
+Two independent matrices: the **server runtime** Vertex runs on, and the **client protocol** of the players that
+connect. The packet library observes the connection *after* ViaVersion translated it, so a client older or newer than
+the server is seen with the server's packet layout; the client's original version comes from the ViaVersion API.
 
-Verified facts (see [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for sources and the exact tested builds):
+**Server runtimes (target):** Minecraft Java Edition **1.21.x** and **26.1, 26.2, 26.3** on **CraftBukkit**, **Spigot**
+and **Paper**. `plugin.yml` declares `api-version: '1.21'`; one `Vertex.jar` is used for all of them.
 
-- PacketEvents **2.14.0** declares support for 26.1 through 26.3 (2.12.0: 26.1/26.1.1, 2.12.1: 26.1.2,
-  2.13.0: 26.2, 2.14.0: 26.3). Its release notes name Spigot but not CraftBukkit, so CraftBukkit was verified at
-  runtime instead of assumed: the embedded library loads, initializes and observes packets on the CraftBukkit
-  builds in the matrix below.
-- API baseline: `spigot-api 26.1-R0.1-SNAPSHOT` (the oldest target); `plugin.yml` uses `api-version: '26.1'`.
-  Paper-only code lives in a separate adapter that is loaded reflectively and only when Paper is detected.
-- Rich messages depend on the server: Paper uses native Adventure, Spigot uses BungeeCord chat components (hover
-  details and action bar), and CraftBukkit has neither, so Vertex falls back to colored legacy text without hover or
-  action bar and states this in `/vertex status`.
-- If the packet library cannot start on a server, Vertex keeps running, disables the packet-driven checks, says so in
-  the log and in `/vertex status`, and never advertises them as active.
+**Client protocols (target):** the vanilla protocol of the server version, plus older clients through the optional
+ViaVersion/ViaBackwards plugins. Nobody is exempted for using Via.
 
-| Server | 26.1 | 26.2 | 26.3 |
-|---|---|---|---|
-| CraftBukkit | verified on 26.1.2 — BuildTools 201; Spigot build 4632; live client packets observed | verified on 26.2 — BuildTools 201; Spigot build 4648 | verified on 26.3 — BuildTools 201; Spigot build 4663 |
-| Spigot | verified on 26.1.2 — BuildTools 201; Spigot build 4632; live client packets observed | verified on 26.2 — BuildTools 201; Spigot build 4648 | verified on 26.3 — BuildTools 201; Spigot build 4663 |
-| Paper | verified on 26.1.2 — Paper 74 (STABLE); live client packets observed | verified on 26.2 — Paper 134 (STABLE) | verified on 26.3 — Paper 222 (STABLE) |
+What is *verified* and what is not is recorded, per exact build and with the date and workflow run, in
+[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md). Anything not listed there is **unverified**, even if it is in the
+target lists above. Highlights of how compatibility is achieved:
 
-*verified* (at commit `06bdc6e`, before the staff-exemption feature was added) = the startup and functionality smoke test passed on that exact server build (Temurin Java 
-25.0.4 on the Linux CI runner): plugin load, packet-listener initialization, commands, localized messages, 
-aggregation, safe reload, administrative auditing, evidence persistence and clean shutdown. Minecraft 26.1 
-was tested with the 26.1.2 builds; 26.1 and 26.1.1 share the same Spigot/CraftBukkit build but were not 
-tested separately, and Paper 26.1/26.1.1 were not tested. Any combination or patch not listed is 
-**unverified**. A real protocol client (permissions, alert recipients, a malformed packet reaching the 
-listener) was only available for 26.1.2; on 26.2 and 26.3 the packet listener is verified to initialize 
-and run, but no client traffic was observed. Not covered by the smoke tests: the live action-bar counter, 
-alert sounds, tab completion, the LuckPerms integration and non-Linux hosts.
+- **Java 21 baseline with isolated newer adapters.** All modules compile with `--release 21`. The Paper API is
+  published for Java 25 only, so it is read on the *compile classpath only*; the Paper adapter itself is Java 21
+  bytecode and is loaded reflectively only when Paper is detected. The `Build` workflow scans every class in the
+  shaded jar (including the embedded dependencies) and fails if any has a class-file major version above 65.
+- **API differences between 1.21 and 26.x** (attribute constants that were renamed, `InventoryView` which changed
+  from a class to an interface) are reached through cached reflection in one place (`runtime/Compat`), so the same
+  compiled call sites work on both.
+- **PacketEvents 2.14.0** is embedded and relocated (no second plugin, no conflict with other copies). It handles the
+  dedicated attack packet of 26.x and the interact-entity attack of 1.21.x.
+- **Rich messages** depend on the server: Paper uses native Adventure, Spigot uses BungeeCord chat components, and
+  CraftBukkit has neither, so Vertex falls back to colored legacy text and says so in `/vertex status`.
+- If the packet library cannot start on a server, Vertex keeps running, reports `UNSUPPORTED` for every packet check
+  in `/vertex diagnose`, and never advertises them as active.
 
-The smoke-test harness used for that run is not part of the repository any more, and the current head has not been re-run on live servers. Exact builds, the reported server version strings and every check are recorded in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+## Who is checked: exemptions, operators and test mode
+
+Monitoring, **receiving alerts** and **being exempt** are three separate things.
+
+| Question | Answer |
+|---|---|
+| Does receiving alerts exempt a player? | **Never.** Recipients (operators, `vertex.alerts`, Creative, staff groups) are checked like everyone else. A player does not receive alerts about themselves unless `alerts.notify-subject` is on or their test mode is active. |
+| Does being an operator exempt a player? | **No.** OP alone never disables detection. The opt-in `staff.operators-exempt: true` (default `false`) exists for servers that want it, and `/vertex diagnose` then reports `OPERATOR` as the reason. |
+| Does the permission `vertex.bypass.gameplay` exempt? | Only when granted **by that exact node** (default: nobody). `*` and `vertex.*` also make Bukkit's `hasPermission` return true, so a wildcard-only grant is **ignored** unless `staff.permission-wildcards: true`; diagnostics show `WILDCARD_ONLY` and the note explaining why. |
+| Do the LuckPerms staff ranks exempt? | Yes, by documented default: members of `staff.luckperms.groups` (Mod, Mod Plus, Administrator, Administrador, Dono, Owner) are exempt while `staff.luckperms.exempt-groups: true`. Set it to `false` to keep recognizing the ranks (for alerts and audit) while still checking them. |
+
+Groups are resolved through the **official LuckPerms API**: direct and **inherited** groups in the player's **active
+contexts**, honouring **temporary** memberships (Vertex never changes stored groups). Entries are real group ids
+(exact, case-insensitive; no substring matching) or labels in `staff.luckperms.mappings`, so "Mod Plus" maps to
+whichever of `modplus`, `mod_plus`, `mod-plus` exists. Chat prefixes, nicknames, tags and client-supplied data are
+never used. Recognition grants no OP, wildcard, Creative or command permission.
+
+An exempt player produces no violations, counters, aggregated alerts or suspect state. When a rank is gained, pending
+gameplay alerts and buffers are discarded (stored evidence is kept); when it is removed or expires, monitoring restarts
+with fresh samples after `grace.rank-change-ms`. **Administrative auditing** of OP, group, tag, team and game-mode
+changes is separate and keeps running for everyone, exempt or not.
+
+### Test mode
+
+`/vertex testmode <player> on|off` (permission `vertex.command.testmode`; the console may use it) forces the checks on
+for **that one player**, even if they are an operator, hold a staff rank or the bypass permission:
+
+- it does **not** change OP, ranks, permissions or game mode, and affects nobody else;
+- it uses the real pipeline: no violation is ever manufactured, legitimate physics (Creative flight, elytra, vehicles)
+  is still respected, and a player who does nothing suspicious produces nothing;
+- the player also receives alerts about themselves while it is active, so a tester sees their own results;
+- it ends by itself after `test-mode.duration-minutes` (default 15), on logout and on restart, and shows in
+  `/vertex diagnose` with the remaining time.
+
+**Testing your own account while keeping OP/staff** (Survival mode, so Creative flight is not what you test):
+
+1. Stay as you are (OP, rank, permissions unchanged). From the console or as an operator: `/vertex testmode <you> on`.
+2. Switch your own game mode to Survival (`/gamemode survival`); test cheats are not meaningful in Creative.
+3. Enable the module in your client, use it for at least 30–60 seconds (the speed check needs about a second of
+   consecutive movement, the click analysis a window of 60 clicks, reach a few attempts at a target out of range).
+4. Run `/vertex diagnose <you>`. Each check shows `ACTIVE`, or the exact missing input (`INSUFFICIENT_DATA`), or why it
+   is not evaluating. Alerts appear in chat/console as `⚠ [Vertex] <you> • <Check> • 2x`.
+5. `/vertex testmode <you> off` when finished, or let it expire.
+
+If a test shows nothing, read the diagnose output before concluding anything: a check that is `EXEMPT`, in
+`GRACE_PERIOD` or `INSUFFICIENT_DATA` is not "clean", it is not evaluating.
+
+## Diagnostics
+
+`/vertex diagnose <player>` (permission `vertex.command.diagnose`) is private, read-only and bounded (counters and
+cached values, no packet log). It shows:
+
+- build id, server implementation and Minecraft version, the server protocol, the client's **original** protocol
+  (from ViaVersion when present) next to what the packet library sees, packet library status and Via status;
+- OP, game mode, resolved LuckPerms groups, the bypass-permission grant and the note explaining it, the **exact
+  exemption reason** (or `none`), test-mode state and the active grace period;
+- recent packet counts by type, the time since the last packet and observations dropped by the bounded queue;
+- reach counters (attempts queued, unresolved targets, evaluations, buffer);
+- pending aggregation windows and the number of eligible alert recipients;
+- one line per check with its state and counters: `ACTIVE`, `INSUFFICIENT_DATA` (with the missing input and
+  `samples/needed`), `EXEMPT`, `GRACE_PERIOD`, `UNSUPPORTED`, `ERROR` (with the last error) or `DISABLED`.
+
+A missing input disables only the check that needs it, and says so. `/vertex status` and `/vertex inspect` show the
+same exemption reason and dependency status.
 
 ## What Vertex checks
 
-Only checks that are implemented and operating are listed. `/vertex status` shows which ones are active on your server.
+Only checks that are implemented and operating are listed; `/vertex status` and `/vertex diagnose` show which ones are
+active on your server. The full description of each one — what it observes, what counts as evidence, its exemptions
+and its limits — is in [docs/CHECKS.md](docs/CHECKS.md).
 
 | Check id | Kind | Evidence |
 |---|---|---|
@@ -96,13 +162,18 @@ Only checks that are implemented and operating are listed. `/vertex status` show
 | `PacketFlood` | suspicion | Total inbound packet rate far above normal for consecutive seconds |
 | `AutoClickerPattern` | suspicion | Completed windows of attack timing with several independent regularity signals (see below) |
 | `MovementSpeed` | suspicion | Horizontal movement per packet beyond the limit derived from the server-known speed attribute / flight speed |
+| `MovementSustainedSpeed` | suspicion | **Bunny-hop signature:** average speed over many packets above what a sprint-jump chain can sustain |
 | `MovementAscent` | suspicion | Upward movement beyond jump/step/jump-boost allowance |
 | `MovementHover` | suspicion | Standing still in mid-air with nothing below and no server-known effect |
-| `ReachDistance` | suspicion | Repeated attacks beyond the server-known interaction range plus latency tolerance |
+| `ReachDistance` | suspicion | Repeated **attack attempts** (applied or not) from beyond the server-known interaction range plus derived latency uncertainty, measured eye-to-hitbox |
 
 *Established* means the packet or server-known state contradicts what an unmodified client can produce. *Suspicion*
 is statistical and needs several samples, buffers and decays; it is never proof of a specific cheat.
 See [docs/CONFIDENCE.md](docs/CONFIDENCE.md) for what the confidence labels mean (they are **not** probabilities).
+
+Vertex does **not** detect by client name: Meteor Client, or any other client, is only a regression target for the
+generic checks above. A "Blast"-style module, or any module that only changes client-side state, is detected only if it
+produces one of the observable contradictions listed here; Vertex has no detector named after it.
 
 ### Auto-clicker analysis
 
@@ -124,7 +195,7 @@ Detections are never broadcast. Recipients are configured in `alerts.recipients`
 - players in configured game modes — **CREATIVE** by default; add `SPECTATOR` if wanted.
 
 Game-mode eligibility only grants access to alerts; it never grants a command. Ordinary Survival/Adventure players
-receive nothing unless separately authorized. The subject of an alert never receives their own alert. Every
+receive nothing unless separately authorized. The subject of an alert does not receive it unless `alerts.notify-subject` is on or their test mode is active. Every
 recipient can switch alerts off with `/vertex alerts`.
 
 Incidents are grouped by **player UUID and check id** inside a fixed window (default 2 s). Two qualifying incidents
@@ -135,13 +206,15 @@ listener counts once. Totals stay exact in the evidence history even when the ch
 
 ## Commands and permissions
 
-`/vertex` (alias `/vx`). Portuguese subcommand names also work (`alertas`, `inspecionar`, `historico`, `recarregar`).
+`/vertex` (alias `/vx`). Portuguese subcommand names also work (`alertas`, `inspecionar`, `diagnosticar`, `teste`, `historico`, `recarregar`).
 
 | Command | Permission | Purpose |
 |---|---|---|
 | `/vertex help` | none | Lists the commands you may use |
 | `/vertex alerts` | `vertex.command.alerts`, `vertex.alerts`, or being an eligible recipient | Toggle your personal alerts |
-| `/vertex inspect <player>` | `vertex.command.inspect` | Detection state, latency, grace, client information |
+| `/vertex inspect <player>` | `vertex.command.inspect` | Detection state, latency, grace, exemption reason, client information |
+| `/vertex diagnose <player>` | `vertex.command.diagnose` | Everything Vertex sees and why each check is or is not evaluating |
+| `/vertex testmode <player> on\|off` | `vertex.command.testmode` | Force the checks on for one player for a limited time (console allowed) |
 | `/vertex history [player] [n]` | `vertex.command.history` | Recent evidence |
 | `/vertex status` | `vertex.command.status` | Health, active checks, platform capabilities, dependency status |
 | `/vertex reload` | `vertex.command.reload` | Validate and reload the configuration |
@@ -166,30 +239,6 @@ or fake log lines. Templates cannot create click events.
 Evidence history and personal preferences are stored locally in `plugins/Vertex/data/` with asynchronous, bounded
 writes and configurable retention (entries, bytes, days). Vertex has no telemetry and makes no network requests.
 
-## Administrative staff (LuckPerms)
-
-Vertex recognizes administrative ranks through the **official LuckPerms API** (compile-only, optional; the LuckPerms
-plugin is never bundled and Vertex never changes stored groups or assigns ranks). The ranks are configured in
-`staff.luckperms.groups` — default: Mod, Mod Plus, Administrator, Administrador, Dono, Owner. Entries are real group
-ids (exact, case-insensitive match; no substring matching) or labels defined in `staff.luckperms.mappings`, so
-"Mod Plus" maps to whichever of `modplus`, `mod_plus`, `mod-plus` exists.
-
-Membership is resolved from LuckPerms' effective data: direct **and inherited** groups in the player's **active
-server/world contexts**, excluding expired **temporary** memberships — not only the primary group. Chat prefixes,
-nicknames, scoreboard tags and client-supplied data are never used. OP is not needed and not implied.
-
-Members of those groups, and players with the explicit permission `vertex.bypass.gameplay` (default: nobody, not
-even operators), bypass **every** gameplay and packet check through one central registry: no violations, no counters,
-no aggregated alerts, no entry in suspect state. They are still eligible alert recipients (`alerts.recipients.staff`)
-and can switch alerts off. Recognition grants no OP, wildcard, Creative or command permission.
-
-When a rank is gained, pending gameplay alerts and detection buffers are discarded (stored evidence is kept). When
-it is removed or expires, monitoring restarts with fresh samples after `grace.rank-change-ms`. State is cached and
-refreshed on join, on LuckPerms data recalculation (group, inheritance, context and temporary-membership changes),
-on `/vertex reload`, and by a slow round-robin safety net for permission changes that raise no event. Without
-LuckPerms the group integration is inactive (reported by `/vertex status`) and the permission bypass still works.
-Auditing of OP, group, tag, team and game-mode changes is independent of this exemption.
-
 ## Administrative auditing
 
 Vertex audits observable changes to **OP status, game mode, permission groups (LuckPerms, optional), monitored
@@ -209,6 +258,23 @@ permission nodes, scoreboard tags, and teams/prefixes**, and keeps these entries
 A plugin cannot provide tamper-proof protection against someone who controls the server process, its files or the
 console.
 
+## ViaVersion and ViaBackwards
+
+Both are optional, never bundled and never required. When ViaVersion is enabled, Vertex uses its official API to learn
+the **original client protocol** (it can arrive a moment after the connection starts, so diagnostics may show it as
+unknown right after join) and shows it in `/vertex diagnose` and the join report.
+
+- **Where observation happens:** the packet library sees the connection after translation, i.e. in the *server's*
+  packet layout. Movement, attack and click packets are therefore analysed with the server's rules — the speed
+  attribute, interaction range and hitboxes are the server's, which are what the server actually applies. Attacks are
+  observed once, by the packet path; the Bukkit damage event is only a fallback when the packet library is not
+  running, so nothing is counted twice.
+- Via users are **not** exempt and not flagged for using Via. A translated client can show slightly different packet
+  timing (translation batches and reorders some packets); windows contaminated by batching are skipped rather than
+  judged.
+- Mechanics that differ between client versions (for example attack-cooldown behaviour on old clients) are not
+  modelled per client version; the checks use server-known limits plus tolerances.
+
 ## Client information on join
 
 After collecting what is available (or after a bounded timeout, 3 s by default) Vertex privately tells recipients the
@@ -227,15 +293,19 @@ software, so Vertex always reports **injection status: not verifiable from serve
 - Limits come from server-authoritative state: the movement-speed attribute (already including potion and sprint
   modifiers), ability flight speed, jump boost, levitation, slow falling, vehicles, gliding, riptide,
   climbables/liquids/webs/honey/scaffolding, the entity interaction range attribute and latency.
-- Administrative staff (above) are not checked at all; Creative flight and Spectator are not accused for having those abilities; operators are not exempt from every
-  check — only the exemptions that relate to the actual ability apply.
+- Exempt players (see *Who is checked*) are not checked at all; Creative flight and Spectator are not accused for
+  having those abilities; operators are **not** exempt unless `staff.operators-exempt` is enabled.
+- **No universal detection is claimed.** A cheat that stays inside vanilla limits (for example a bunny-hop that is no
+  faster than a legitimate sprint-jump chain, or clicking as irregularly as a human) cannot be told apart from
+  legitimate input by a server-side observer. Reach hidden inside the latency allowance is not flagged. Features that
+  only act on the client (visuals, client-side automation that produces ordinary packets) are invisible.
 - Latency, TPS and MSPT: Paper exposes TPS/MSPT; elsewhere Vertex reports a scheduler-derived tick rate (labelled as
   such) and MSPT as unknown. Unavailable values are shown as unknown, never invented.
 - Packet batching and jitter can hide or mimic patterns; contaminated windows are skipped.
 - Movement packets are sampled from the network thread while world state is sampled on the server thread every two
   ticks, so very short transitions are covered by grace periods rather than exact modelling.
-- Minecraft 26.2 and 26.3 have no public protocol test client yet, so the live-packet test (a real client sending
-  packets) is limited to 26.1.x; see the matrix above for exactly what was verified.
+- Live-client verification is limited to what [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) records: it used a
+  protocol library (mineflayer), never the official client or Meteor Client, and says so for every result.
 
 ## Building
 
@@ -243,9 +313,12 @@ software, so Vertex always reports **injection status: not verifiable from serve
 ./gradlew build      # compiles every module and produces plugin/build/libs/Vertex.jar
 ```
 
-Requirements: JDK 25. The Gradle wrapper is included (Gradle 9.8.2, Kotlin DSL). The repository contains no test
-sources or test harnesses; the `Build` workflow compiles the project, packages `Vertex.jar`, verifies that the jar
-contains no unrelocated third-party classes and publishes the jar as the `Vertex` workflow artifact.
+Requirements: JDK 25 for the toolchain (it compiles with `--release 21`). The Gradle wrapper is included (Gradle 9.8.2, Kotlin DSL). The repository contains no test
+sources, fixtures or captured data. The `Build` workflow compiles the project, packages `Vertex.jar`, verifies that the
+jar contains no unrelocated third-party classes, that no class exceeds the Java 21 class-file version, and that
+LuckPerms/ViaVersion are not bundled, then publishes the jar as the `Vertex` workflow artifact. The manual `Verify`
+workflow generates its protocol-client harness at run time, starts real servers and prints every result in its log;
+nothing it creates is committed.
 
 ## License
 
